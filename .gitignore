@@ -1,0 +1,46 @@
+# .NET Core / C# .gitignore
+# Build results
+bin/
+obj/
+
+# Rider project files
+*.DotSettings.user
+
+# Visual Studio user-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code settings
+.vscode/
+
+# NuGet packages
+*.nupkg
+# NuGet restore
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Others
+*.log
+*.vs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Rider
+.idea/
+
+# Ignore launchSettings.json if you want to keep local settings private
+# Uncomment the next line if needed
+# Properties/launchSettings.json
+
