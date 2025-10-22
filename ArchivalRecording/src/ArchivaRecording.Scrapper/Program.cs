@@ -8,7 +8,7 @@ builder.Services.AddHostedService<Worker>();
 // Configure settings
 var configuration = builder.Configuration;
 configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-builder.Services.Configure<DevelopmentProposalScrapperSettings>(configuration.GetSection("ArchivaRecording.Scrapper"));
+builder.Services.Configure<DevelopmentProposalScrapperSettings>(configuration.GetSection("WorkerSchedule:DevelopmentProposalScrapper"));
 
 //  API Clients
 builder.Services.AddRefitClient<IOnlineDAApi>().ConfigureHttpClient(c =>

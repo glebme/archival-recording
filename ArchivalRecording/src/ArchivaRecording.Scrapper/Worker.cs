@@ -1,4 +1,5 @@
 using DevelopmentProposalScrapper.Services;
+using Microsoft.Extensions.Options;
 using NCrontab;
 
 namespace DevelopmentProposalScrapper;
@@ -12,14 +13,14 @@ public class Worker : BackgroundService
 
     private DateTime _nextRun;
 
-    public Worker(ILogger<Worker> logger, DevelopmentProposalScrapperSettings settings, IOnlineDAClient client)
+    public Worker(ILogger<Worker> logger, IOptions<DevelopmentProposalScrapperSettings> options, IOnlineDAClient client)
     {
         _logger = logger;
-        _settings = settings;
+        _settings = options.Value;
         _client = client;
         if (_settings == null)
         {
-            throw new ArgumentNullException(nameof(settings), "DevelopmentProposalScrapperSettings cannot be null.");
+            throw new ArgumentNullException(nameof(options), "DevelopmentProposalScrapperSettings cannot be null.");
         }
 
         _schedule = CrontabSchedule.Parse(_settings.CronSchedule);
