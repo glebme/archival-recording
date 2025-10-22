@@ -5,5 +5,5 @@ namespace DevelopmentProposalScrapper.Services;
 
 public interface IOnlineDAClient
 {
-    Task<Result<OnlineDAResponse>> GetOnlineDARecordsAsync();
+    Task<Result<OnlineDAResponse>> GetOnlineDARecordsAsync(int pageSize, int pageNumber);
 }

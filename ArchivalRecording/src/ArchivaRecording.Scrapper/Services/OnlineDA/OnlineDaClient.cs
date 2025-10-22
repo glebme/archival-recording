@@ -1,4 +1,3 @@
-
 using DevelopmentProposalScrapper.Models.OnlineDA;
 using Shared;
 
@@ -12,8 +11,21 @@ public class OnlineDaClient : IOnlineDAClient
     {
         _daApi = daApi;
     }
-    public Task<Result<OnlineDAResponse>> GetOnlineDARecordsAsync()
+
+    public async Task<Result<OnlineDAResponse>> GetOnlineDARecordsAsync(int pageSize, int pageNumber)
     {
-        throw new NotImplementedException();
+        var filters = new Filters
+            {
+                CouncilName = ["Council of the City of Sydney"],
+                ApplicationType = ApplicationType.DevelopmentApplication,
+                ApplicationStatus = [ApplicationStatus.Determined],
+                DeterminationDateFrom = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1)),
+                LodgementDateFrom = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1))
+            };
+
+        var response = await _daApi.GetOnlineDARecordsAsync(pageSize, pageNumber, filters);
+
+        return response.IsSuccessful ? Result<OnlineDAResponse>.Success(response.Content!) : 
+            Result<OnlineDAResponse>.Failure($"API call failed with status code {response.StatusCode}");
     }
 }

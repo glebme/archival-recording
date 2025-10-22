@@ -22,5 +22,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\ArchivalRecording.Shared\ArchivalRecording.Shared.csproj" />
+      <ProjectReference Include="..\ArchivalRecording.Shared\ArchivalRecording.Shared.csproj" />
     </ItemGroup>
 </Project>

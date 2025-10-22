@@ -5,6 +5,6 @@ namespace DevelopmentProposalScrapper.Services;
 
 public interface IOnlineDAApi
 {
-   [Get("/eplanning/data/v0/OnlineDA")]
-   Task<OnlineDAResponse> GetOnlineDARecordsAsync([Query] OnlineDARequest request);
+    [Get("/eplanning/data/v0/OnlineDA")]
+    Task<IApiResponse<OnlineDAResponse>> GetOnlineDARecordsAsync([Header("PageSize")] int pageSize, [Header("PageNumber")] int pageNumber, [Header("Filters")] object filters);
 }

@@ -29,8 +29,8 @@ public record Address
     public string X { get; }
     public string Y { get; }
     public string StreetNumber1 { get; }
-    public string StreetNumber2 { get; }   
-    public string StreetNumber3 { get; }   
+    public string StreetNumber2 { get; }
+    public string StreetNumber3 { get; }
     public string StreetName { get; }
     public string StreetType { get; }
     public string Suburb { get; }

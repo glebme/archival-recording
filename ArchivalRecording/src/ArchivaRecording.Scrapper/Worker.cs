@@ -1,3 +1,4 @@
+using DevelopmentProposalScrapper.Services;
 using NCrontab;
 
 namespace DevelopmentProposalScrapper;
@@ -6,19 +7,21 @@ public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly DevelopmentProposalScrapperSettings _settings;
+    private readonly IOnlineDAClient _client;
     private readonly CrontabSchedule _schedule;
-    
+
     private DateTime _nextRun;
 
-    public Worker(ILogger<Worker> logger, DevelopmentProposalScrapperSettings settings)
+    public Worker(ILogger<Worker> logger, DevelopmentProposalScrapperSettings settings, IOnlineDAClient client)
     {
         _logger = logger;
         _settings = settings;
+        _client = client;
         if (_settings == null)
         {
             throw new ArgumentNullException(nameof(settings), "DevelopmentProposalScrapperSettings cannot be null.");
         }
-        
+
         _schedule = CrontabSchedule.Parse(_settings.CronSchedule);
         _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
     }
@@ -30,11 +33,22 @@ public class Worker : BackgroundService
             if (DateTime.Now >= _nextRun && _settings.IsEnabled)
             {
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                var result = await _client.GetOnlineDARecordsAsync(5, 14);
+
+                if (result is { IsSuccess: true, Model: not null })
+                {
+                    var records = result.Model!;
+                    _logger.LogInformation("Fetched {count} records.", records.TotalPages * records.PageSize);
+                }
+                else
+                {
+                    _logger.LogError("Failed to fetch records: {error}", result.ErrorMessage);
+                }
             }
 
             _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
             var delay = _nextRun - DateTime.Now;
-            
+
             await Task.Delay(delay, stoppingToken);
         }
     }

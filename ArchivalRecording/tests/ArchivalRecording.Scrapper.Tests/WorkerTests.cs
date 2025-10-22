@@ -1,4 +1,5 @@
 ﻿using DevelopmentProposalScrapper;
+using DevelopmentProposalScrapper.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -72,7 +73,9 @@ public class WorkerTests
             IsEnabled = isEnabled,
             CronSchedule = cronSchedule
         };
+
+        var client = new Mock<IOnlineDAClient>();
         
-        return new Worker(_loggerMock.Object, settings);
+        return new Worker(_loggerMock.Object, settings, client.Object);
     }
 }

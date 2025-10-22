@@ -15,6 +15,7 @@ builder.Services.AddRefitClient<IOnlineDAApi>().ConfigureHttpClient(c =>
 {
     c.BaseAddress = new Uri("https://api.apps1.nsw.gov.au");
 });
+builder.Services.AddScoped<IOnlineDAClient, OnlineDaClient>();
 
 var host = builder.Build();
 host.Run();
