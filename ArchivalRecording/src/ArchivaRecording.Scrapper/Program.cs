@@ -1,5 +1,6 @@
 using DevelopmentProposalScrapper;
 using DevelopmentProposalScrapper.Services;
+using DevelopmentProposalScrapper.Services.OnlineDA;
 using Refit;
 
 var builder = Host.CreateApplicationBuilder(args);

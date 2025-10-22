@@ -1,7 +1,7 @@
 using DevelopmentProposalScrapper.Models.OnlineDA;
 using Shared;
 
-namespace DevelopmentProposalScrapper.Services;
+namespace DevelopmentProposalScrapper.Services.OnlineDA;
 
 public class OnlineDaClient : IOnlineDAClient
 {

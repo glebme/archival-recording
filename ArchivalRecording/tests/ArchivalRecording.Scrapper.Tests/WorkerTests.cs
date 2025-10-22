@@ -1,6 +1,6 @@
 ﻿using DevelopmentProposalScrapper;
 using DevelopmentProposalScrapper.Models.OnlineDA;
-using DevelopmentProposalScrapper.Services;
+using DevelopmentProposalScrapper.Services.OnlineDA;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Shared;

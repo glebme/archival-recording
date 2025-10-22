@@ -1,4 +1,5 @@
 using DevelopmentProposalScrapper.Services;
+using DevelopmentProposalScrapper.Services.OnlineDA;
 using Microsoft.Extensions.Options;
 using NCrontab;
 
