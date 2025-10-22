@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
+        <RootNamespace>DevelopmentProposalScrapperTests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\DevelopmentProposalScrapper\DevelopmentProposalScrapper.csproj" />
+      <ProjectReference Include="..\..\src\ArchivaRecording.Scrapper\ArchivaRecording.Scrapper.csproj" />
     </ItemGroup>
 
 </Project>

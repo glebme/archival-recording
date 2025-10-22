@@ -5,14 +5,22 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-DevelopmentProposalScrapper-668cc31f-e5c6-4637-9b8d-7495d51e8132</UserSecretsId>
+        <RootNamespace>DevelopmentProposalScrapper</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.8"/>
         <PackageReference Include="NCrontab" Version="3.3.3" />
+        <PackageReference Include="Refit" Version="8.0.0" />
+        <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Services\" />
+      <Folder Include="Repositories\" />
+      <Folder Include="Services\OnlineDa\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\ArchivalRecording.Shared\ArchivalRecording.Shared.csproj" />
     </ItemGroup>
 </Project>
