@@ -1,7 +1,9 @@
 ﻿using DevelopmentProposalScrapper;
+using DevelopmentProposalScrapper.Models.OnlineDA;
 using DevelopmentProposalScrapper.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Shared;
 
 namespace DevelopmentProposalScrapperTests;
 
@@ -9,6 +11,7 @@ namespace DevelopmentProposalScrapperTests;
 public class WorkerTests
 {
     private Mock<ILogger<Worker>> _loggerMock;
+    private Mock<IOnlineDAClient> _client;
 
     [SetUp]
     public void Setup()
@@ -21,6 +24,16 @@ public class WorkerTests
     {
         // Arrange
         var worker = CreateWorker(true, "*/1 * * * *"); // Every 1 minutes
+        _client.Setup(client => client.GetOnlineDARecordsAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(
+            new Result<OnlineDAResponse>
+            {
+                IsSuccess = true,
+                Model = new OnlineDAResponse
+                {
+                    TotalPages = 1,
+                    PageSize = 10
+                }
+            });
 
         Task.Delay(TimeSpan.FromMinutes(1)).Wait(); // Wait for 1 minute to ensure the datetime is after the 1 minute
         
@@ -74,8 +87,8 @@ public class WorkerTests
             CronSchedule = cronSchedule
         };
 
-        var client = new Mock<IOnlineDAClient>();
+        _client = new Mock<IOnlineDAClient>();
         
-        return new Worker(_loggerMock.Object, settings, client.Object);
+        return new Worker(_loggerMock.Object, settings, _client.Object);
     }
 }
