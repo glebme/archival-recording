@@ -1,6 +1,7 @@
 ﻿using DevelopmentProposalScrapper;
 using DevelopmentProposalScrapper.Models.OnlineDA;
 using DevelopmentProposalScrapper.Services.OnlineDA;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -14,12 +15,19 @@ public class WorkerTests
     private Mock<IOptions<DevelopmentProposalScrapperSettings>> _optionsMock;
     private Mock<ILogger<Worker>> _loggerMock;
     private Mock<IOnlineDAClient> _client;
+    private Mock<IServiceScopeFactory> _scopeFactoryMock;
+    private Mock<IServiceScope> _scopeMock;
+    private Mock<IServiceProvider> _serviceProviderMock;
 
     [SetUp]
     public void Setup()
     {
         _loggerMock = new Mock<ILogger<Worker>>();
         _optionsMock = new Mock<IOptions<DevelopmentProposalScrapperSettings>>();
+        _scopeFactoryMock = new Mock<IServiceScopeFactory>();
+        _scopeMock = new Mock<IServiceScope>();
+        _serviceProviderMock = new Mock<IServiceProvider>();
+        _client = new Mock<IOnlineDAClient>();
     }
 
     [Test]
@@ -91,8 +99,11 @@ public class WorkerTests
         };
 
         _optionsMock.Setup(o => o.Value).Returns(settings);
-        _client = new Mock<IOnlineDAClient>();
+        _scopeFactoryMock.Setup(f => f.CreateScope()).Returns(_scopeMock.Object);
+        _scopeMock.Setup(s => s.ServiceProvider).Returns(_serviceProviderMock.Object);
+        _serviceProviderMock.Setup(sp => sp.GetService(typeof(IOnlineDAClient))).Returns(_client.Object);
+        _serviceProviderMock.Setup(sp => sp.GetRequiredService<IOnlineDAClient>()).Returns(_client.Object); 
         
-        return new Worker(_loggerMock.Object, _optionsMock.Object, _client.Object);
+        return new Worker(_loggerMock.Object, _optionsMock.Object, _scopeFactoryMock.Object);
     }
 }

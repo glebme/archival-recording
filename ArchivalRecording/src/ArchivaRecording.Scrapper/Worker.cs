@@ -8,17 +8,17 @@ namespace DevelopmentProposalScrapper;
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly DevelopmentProposalScrapperSettings _settings;
-    private readonly IOnlineDAClient _client;
     private readonly CrontabSchedule _schedule;
 
     private DateTime _nextRun;
 
-    public Worker(ILogger<Worker> logger, IOptions<DevelopmentProposalScrapperSettings> options, IOnlineDAClient client)
+    public Worker(ILogger<Worker> logger, IOptions<DevelopmentProposalScrapperSettings> options, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _settings = options.Value;
-        _client = client;
+        _serviceScopeFactory = serviceScopeFactory;
         if (_settings == null)
         {
             throw new ArgumentNullException(nameof(options), "DevelopmentProposalScrapperSettings cannot be null.");
@@ -35,7 +35,11 @@ public class Worker : BackgroundService
             if (DateTime.Now >= _nextRun && _settings.IsEnabled)
             {
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                var result = await _client.GetOnlineDARecordsAsync(5, 14);
+                
+                using var scope = _serviceScopeFactory.CreateScope();
+                var client = scope.ServiceProvider.GetRequiredService<IOnlineDAClient>();
+                
+                var result = await client.GetOnlineDARecordsAsync(5, 14);
 
                 if (result is { IsSuccess: true, Model: not null })
                 {
