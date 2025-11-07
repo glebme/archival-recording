@@ -2,6 +2,7 @@
 using DevelopmentProposalScrapper.Models.OnlineDA;
 using DevelopmentProposalScrapper.Services.OnlineDA;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Shared;
 
@@ -10,6 +11,7 @@ namespace DevelopmentProposalScrapperTests;
 [TestFixture]
 public class WorkerTests
 {
+    private Mock<IOptions<DevelopmentProposalScrapperSettings>> _optionsMock;
     private Mock<ILogger<Worker>> _loggerMock;
     private Mock<IOnlineDAClient> _client;
 
@@ -17,6 +19,7 @@ public class WorkerTests
     public void Setup()
     {
         _loggerMock = new Mock<ILogger<Worker>>();
+        _optionsMock = new Mock<IOptions<DevelopmentProposalScrapperSettings>>();
     }
 
     [Test]
@@ -87,8 +90,9 @@ public class WorkerTests
             CronSchedule = cronSchedule
         };
 
+        _optionsMock.Setup(o => o.Value).Returns(settings);
         _client = new Mock<IOnlineDAClient>();
         
-        return new Worker(_loggerMock.Object, settings, _client.Object);
+        return new Worker(_loggerMock.Object, _optionsMock.Object, _client.Object);
     }
 }
