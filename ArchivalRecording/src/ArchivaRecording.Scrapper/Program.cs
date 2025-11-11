@@ -1,5 +1,4 @@
 using DevelopmentProposalScrapper;
-using DevelopmentProposalScrapper.Services;
 using DevelopmentProposalScrapper.Services.OnlineDA;
 using Refit;
 
@@ -8,8 +7,12 @@ builder.Services.AddHostedService<Worker>();
 
 // Configure settings
 var configuration = builder.Configuration;
-configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-builder.Services.Configure<DevelopmentProposalScrapperSettings>(configuration.GetSection("WorkerSchedule:DevelopmentProposalScrapper"));
+var env = builder.Environment;
+configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);
+builder.Services.Configure<DevelopmentProposalScrapperSettings>(
+    configuration.GetSection("WorkerSchedule:DevelopmentProposalScrapper"));
 
 //  API Clients
 builder.Services.AddRefitClient<IOnlineDAApi>().ConfigureHttpClient(c =>
@@ -19,4 +22,5 @@ builder.Services.AddRefitClient<IOnlineDAApi>().ConfigureHttpClient(c =>
 builder.Services.AddScoped<IOnlineDAClient, OnlineDaClient>();
 
 var host = builder.Build();
+
 host.Run();

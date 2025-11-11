@@ -26,6 +26,8 @@ public class Worker : BackgroundService
 
         _schedule = CrontabSchedule.Parse(_settings.CronSchedule);
         _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
+        _logger.LogInformation("Worker scheduled to run at: {time}", _nextRun);
+        _logger.LogInformation("Starting Development Proposal Scrapper...");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
