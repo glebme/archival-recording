@@ -23,8 +23,8 @@ public record DevelopmentApplication
     public DateTime? AssessmentExhibitionStartDate { get; init; }
     public decimal CostOfDevelopment { get; init; }
     public string? CouncilApplicationNumber { get; init; }
-    public string? ApplicationStatus { get; init; }
-    public string? ApplicationType { get; init; }
+    public ApplicationStatus? ApplicationStatus { get; init; }
+    public ApplicationType? ApplicationType { get; init; }
     public string? AccompaniedByVPAFlag { get; init; }
     public string? DevelopmentSubjectToSICFlag { get; init; }
     public string? EPIVariationProposedFlag { get; init; }

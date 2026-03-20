@@ -1,16 +1,20 @@
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace DevelopmentProposalScrapper.Models.OnlineDA;
 
 public enum ApplicationStatus
 {
-    [JsonPropertyName("Additional Information Requested")]
+    [Description("Additional Information Requested")]
     AdditionalInformationRequested,
+    [Description("Determined")]
     Determined,
-    [JsonPropertyName("Pending Lodgement")]
+    [Description("Pending Lodgement")]
     PendingLodgement,
+    [Description("Rejected")]
     Rejected,
-    [JsonPropertyName("Pending Court Appeal")]
+    [Description("Pending Court Appeal")]
     PendingCourtAppeal,
+    [Description("Cancelled")]
     Cancelled
 }

@@ -1,13 +1,14 @@
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace DevelopmentProposalScrapper.Models.OnlineDA;
 
 public enum ApplicationType
 {
-    [JsonPropertyName("Development Application")]
+    [Description("Development Application")]
     DevelopmentApplication,
-    [JsonPropertyName("Modification Application")]
+    [Description("Modification Application")]
     ModificationApplication,
-    [JsonPropertyName("Review Of Determination")]
+    [Description("Review Of Determination")]
     ReviewOfDetermination
 }

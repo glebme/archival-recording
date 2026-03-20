@@ -1,12 +1,23 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using DevelopmentProposalScrapper.Models.OnlineDA;
 using Shared;
+using Shared.JsonConverters;
 
 namespace DevelopmentProposalScrapper.Services.OnlineDA;
 
 public class OnlineDaClient : IOnlineDAClient
 {
     private readonly IOnlineDAApi _daApi;
+
+    private static JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        Converters =
+        {
+            new DescriptionEnumConverter<ApplicationType>(),
+            new DescriptionEnumConverter<ApplicationStatus>(),
+        }
+    };
 
     public OnlineDaClient(IOnlineDAApi daApi)
     {
@@ -24,7 +35,7 @@ public class OnlineDaClient : IOnlineDAClient
                 LodgementDateFrom = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1))
             };
 
-        var filtersString = JsonSerializer.Serialize(filters);
+        var filtersString = JsonSerializer.Serialize(filters, _jsonSerializerOptions);
         var response = await _daApi.GetOnlineDARecordsAsync(pageSize, pageNumber, filtersString);
 
         return response.IsSuccessful ? Result<OnlineDAResponse>.Success(response.Content!) :
