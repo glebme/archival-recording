@@ -5,13 +5,8 @@ using System.Net.Http.Headers;
 namespace Shared;
 
  public class HttpLoggingHandler : DelegatingHandler
-    {
-        public HttpLoggingHandler(HttpMessageHandler? innerHandler = null)
-            : base(innerHandler ?? new HttpClientHandler())
-        {
-        }
-
-        async protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+ {
+     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
             var req = request;
