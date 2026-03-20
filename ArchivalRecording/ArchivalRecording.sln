@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArchivaRecording.Scrapper", "src\ArchivaRecording.Scrapper\ArchivaRecording.Scrapper.csproj", "{04F1D62E-FA7C-41DA-A64F-714A72226611}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArchivalRecording.Scrapper", "src\ArchivalRecording.Scrapper\ArchivalRecording.Scrapper.csproj", "{04F1D62E-FA7C-41DA-A64F-714A72226611}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArchivalRecording.Scrapper.Tests", "tests\ArchivalRecording.Scrapper.Tests\ArchivalRecording.Scrapper.Tests.csproj", "{68E13814-2F87-427A-BE68-44F6991F3F1A}"
 EndProject

@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\ArchivaRecording.Scrapper\ArchivaRecording.Scrapper.csproj" />
+      <ProjectReference Include="..\..\src\ArchivalRecording.Scrapper\ArchivalRecording.Scrapper.csproj" />
     </ItemGroup>
 
 </Project>
