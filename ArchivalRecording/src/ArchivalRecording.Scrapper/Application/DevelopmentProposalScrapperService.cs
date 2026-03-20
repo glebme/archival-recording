@@ -4,26 +4,25 @@ using NCrontab;
 
 namespace DevelopmentProposalScrapper.Application;
 
-public class Worker : BackgroundService
+public class DevelopmentProposalScrapperService : BackgroundService
 {
-    private readonly ILogger<Worker> _logger;
+    private readonly ILogger<DevelopmentProposalScrapperService> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly DevelopmentProposalScrapperSettings _settings;
     private readonly CrontabSchedule _schedule;
 
     private DateTime _nextRun;
 
-    public Worker(ILogger<Worker> logger, IOptions<DevelopmentProposalScrapperSettings> options, IServiceScopeFactory serviceScopeFactory)
+    public DevelopmentProposalScrapperService(ILogger<DevelopmentProposalScrapperService> logger, IOptions<DevelopmentProposalScrapperSettings> options, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
-        _settings = options.Value;
+        var settings = options.Value;
         _serviceScopeFactory = serviceScopeFactory;
-        if (_settings == null)
+        if (settings == null)
         {
             throw new ArgumentNullException(nameof(options), "DevelopmentProposalScrapperSettings cannot be null.");
         }
 
-        _schedule = CrontabSchedule.Parse(_settings.CronSchedule);
+        _schedule = CrontabSchedule.Parse(settings.CronSchedule);
         _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
         _logger.LogInformation("Worker scheduled to run at: {time}", _nextRun);
         _logger.LogInformation("Starting Development Proposal Scrapper...");

@@ -9,7 +9,7 @@ using Shared;
 using Shared.JsonConverters;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddHostedService<DevelopmentProposalScrapperService>();
 
 // Configure settings
 var configuration = builder.Configuration;
