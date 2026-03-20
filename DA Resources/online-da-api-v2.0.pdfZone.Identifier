@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://data.nsw.gov.au/
+HostUrl=https://s3.ap-southeast-2.amazonaws.com/oeh-prod-cloudstorage/resources/95279ab6-b115-4300-bb21-30461dae3985/online-da-api-v2.0.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIXHLCNGLM7VP7UOQ%2F20250823%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250823T022348Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=46728c583946242a35ed45110c84a2404c686702f71cb459bc510abd2c5dc0f0
