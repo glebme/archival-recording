@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DevelopmentProposalScrapper.Models.OnlineDA;
 using Shared;
 
@@ -23,9 +24,10 @@ public class OnlineDaClient : IOnlineDAClient
                 LodgementDateFrom = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1))
             };
 
-        var response = await _daApi.GetOnlineDARecordsAsync(pageSize, pageNumber, filters);
+        var filtersString = JsonSerializer.Serialize(filters);
+        var response = await _daApi.GetOnlineDARecordsAsync(pageSize, pageNumber, filtersString);
 
-        return response.IsSuccessful ? Result<OnlineDAResponse>.Success(response.Content!) : 
-            Result<OnlineDAResponse>.Failure($"API call failed with status code {response.StatusCode}");
+        return response.IsSuccessful ? Result<OnlineDAResponse>.Success(response.Content!) :
+            Result<OnlineDAResponse>.Failure($"API call failed with status code {response.StatusCode} and message: {response.Error.InnerException}");
     }
 }
