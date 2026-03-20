@@ -11,5 +11,6 @@ public enum ApplicationStatus
     PendingLodgement,
     Rejected,
     [JsonPropertyName("Pending Court Appeal")]
-    PendingCourtAppeal
+    PendingCourtAppeal,
+    Cancelled
 }
