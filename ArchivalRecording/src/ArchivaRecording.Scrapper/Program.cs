@@ -1,6 +1,7 @@
 using DevelopmentProposalScrapper;
 using DevelopmentProposalScrapper.Services.OnlineDA;
 using Refit;
+using Shared;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
@@ -15,10 +16,10 @@ builder.Services.Configure<DevelopmentProposalScrapperSettings>(
     configuration.GetSection("WorkerSchedule:DevelopmentProposalScrapper"));
 
 //  API Clients
-builder.Services.AddRefitClient<IOnlineDAApi>().ConfigureHttpClient(c =>
-{
-    c.BaseAddress = new Uri("https://api.apps1.nsw.gov.au");
-});
+builder.Services.AddTransient<HttpLoggingHandler>();
+builder.Services.AddRefitClient<IOnlineDAApi>()
+    .ConfigureHttpClient(c => { c.BaseAddress = new Uri("https://api.apps1.nsw.gov.au"); })
+    .AddHttpMessageHandler<HttpLoggingHandler>();
 builder.Services.AddScoped<IOnlineDAClient, OnlineDaClient>();
 
 var host = builder.Build();

@@ -42,7 +42,8 @@ public class WorkerTests
                 Model = new OnlineDAResponse
                 {
                     TotalPages = 1,
-                    PageSize = 10
+                    PageSize = 10,
+                    DevelopmentApplications = []
                 }
             });
 
