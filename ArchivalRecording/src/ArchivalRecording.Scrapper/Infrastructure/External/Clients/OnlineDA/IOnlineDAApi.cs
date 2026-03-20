@@ -1,7 +1,7 @@
-using DevelopmentProposalScrapper.Models.OnlineDA;
+using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using Refit;
 
-namespace DevelopmentProposalScrapper.Services.OnlineDA;
+namespace DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 
 public interface IOnlineDAApi
 {

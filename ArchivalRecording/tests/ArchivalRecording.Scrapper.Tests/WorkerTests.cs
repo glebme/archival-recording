@@ -1,6 +1,7 @@
 ﻿using DevelopmentProposalScrapper;
-using DevelopmentProposalScrapper.Models.OnlineDA;
-using DevelopmentProposalScrapper.Services.OnlineDA;
+using DevelopmentProposalScrapper.Application;
+using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
+using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace DevelopmentProposalScrapper.Models.OnlineDA;
+namespace DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 
 public record OnlineDAResponse
 {

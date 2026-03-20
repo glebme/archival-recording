@@ -1,8 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DevelopmentProposalScrapper;
-using DevelopmentProposalScrapper.Models.OnlineDA;
-using DevelopmentProposalScrapper.Services.OnlineDA;
+using DevelopmentProposalScrapper.Application;
+using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
+using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using Refit;
 using Shared;
 using Shared.JsonConverters;

@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using DevelopmentProposalScrapper.Models.OnlineDA;
+using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using Shared;
 using Shared.JsonConverters;
 
-namespace DevelopmentProposalScrapper.Services.OnlineDA;
+namespace DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 
 public class OnlineDaClient : IOnlineDAClient
 {

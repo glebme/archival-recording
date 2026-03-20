@@ -1,9 +1,8 @@
-using DevelopmentProposalScrapper.Services;
-using DevelopmentProposalScrapper.Services.OnlineDA;
+using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 using Microsoft.Extensions.Options;
 using NCrontab;
 
-namespace DevelopmentProposalScrapper;
+namespace DevelopmentProposalScrapper.Application;
 
 public class Worker : BackgroundService
 {
@@ -34,8 +33,8 @@ public class Worker : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (DateTime.Now >= _nextRun && _settings.IsEnabled)
-            {
+            // if (DateTime.Now >= _nextRun && _settings.IsEnabled)
+            // {
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
                 
                 using var scope = _serviceScopeFactory.CreateScope();
@@ -46,13 +45,13 @@ public class Worker : BackgroundService
                 if (result is { IsSuccess: true, Model: not null })
                 {
                     var records = result.Model!;
-                    _logger.LogInformation("Fetched {count} records.", records.TotalPages * records.PageSize);
+                    _logger.LogInformation("Fetched {count} records.", records.TotalCount);
                 }
                 else
                 {
                     _logger.LogError("Failed to fetch records: {error}", result.ErrorMessage);
                 }
-            }
+            // }
 
             _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
             var delay = _nextRun - DateTime.Now;

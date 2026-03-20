@@ -16,8 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Repositories\" />
-      <Folder Include="Services\OnlineDa\" />
+      <Folder Include="Infrastructure\External\Models\" />
+      <Folder Include="Infrastructure\Persistence\" />
     </ItemGroup>
 
     <ItemGroup>

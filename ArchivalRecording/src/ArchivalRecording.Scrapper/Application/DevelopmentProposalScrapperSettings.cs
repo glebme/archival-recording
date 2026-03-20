@@ -1,4 +1,4 @@
-namespace DevelopmentProposalScrapper;
+namespace DevelopmentProposalScrapper.Application;
 
 public class DevelopmentProposalScrapperSettings
 {

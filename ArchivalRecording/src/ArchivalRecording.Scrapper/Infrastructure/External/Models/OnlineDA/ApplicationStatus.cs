@@ -1,7 +1,6 @@
 using System.ComponentModel;
-using System.Text.Json.Serialization;
 
-namespace DevelopmentProposalScrapper.Models.OnlineDA;
+namespace DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 
 public enum ApplicationStatus
 {
