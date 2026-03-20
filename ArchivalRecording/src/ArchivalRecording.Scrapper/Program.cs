@@ -25,6 +25,7 @@ builder.Services.AddRefitClient<IOnlineDAApi>(new RefitSettings
     {
         ContentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions
         {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             Converters =
             {
                 new DescriptionEnumConverter<ApplicationType>(),

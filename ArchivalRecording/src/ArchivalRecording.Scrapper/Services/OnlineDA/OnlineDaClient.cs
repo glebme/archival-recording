@@ -12,6 +12,7 @@ public class OnlineDaClient : IOnlineDAClient
 
     private static JsonSerializerOptions _jsonSerializerOptions = new()
     {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters =
         {
             new DescriptionEnumConverter<ApplicationType>(),
