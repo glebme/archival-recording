@@ -14,7 +14,7 @@ namespace DevelopmentProposalScrapperTests;
 public class WorkerTests
 {
     private Mock<IOptions<DevelopmentProposalScrapperSettings>> _optionsMock;
-    private Mock<ILogger<Worker>> _loggerMock;
+    private Mock<ILogger<DevelopmentProposalScrapperService>> _loggerMock;
     private Mock<IOnlineDAClient> _client;
     private Mock<IServiceScopeFactory> _scopeFactoryMock;
     private Mock<IServiceScope> _scopeMock;
@@ -23,7 +23,7 @@ public class WorkerTests
     [SetUp]
     public void Setup()
     {
-        _loggerMock = new Mock<ILogger<Worker>>();
+        _loggerMock = new Mock<ILogger<DevelopmentProposalScrapperService>>();
         _optionsMock = new Mock<IOptions<DevelopmentProposalScrapperSettings>>();
         _scopeFactoryMock = new Mock<IServiceScopeFactory>();
         _scopeMock = new Mock<IServiceScope>();
@@ -92,7 +92,7 @@ public class WorkerTests
         );
     }
     
-    private Worker CreateWorker(bool isEnabled, string cronSchedule)
+    private DevelopmentProposalScrapperService CreateWorker(bool isEnabled, string cronSchedule)
     {
         var settings = new DevelopmentProposalScrapperSettings
         {
@@ -106,6 +106,6 @@ public class WorkerTests
         _serviceProviderMock.Setup(sp => sp.GetService(typeof(IOnlineDAClient))).Returns(_client.Object);
         _serviceProviderMock.Setup(sp => sp.GetRequiredService<IOnlineDAClient>()).Returns(_client.Object); 
         
-        return new Worker(_loggerMock.Object, _optionsMock.Object, _scopeFactoryMock.Object);
+        return new DevelopmentProposalScrapperService(_loggerMock.Object, _optionsMock.Object, _scopeFactoryMock.Object);
     }
 }
