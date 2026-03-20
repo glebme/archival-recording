@@ -1,10 +1,18 @@
+using System.Text.Json.Serialization;
+
 namespace DevelopmentProposalScrapper.Models.OnlineDA;
 
 public record OnlineDARequest
 {
     public int PageSize { get; set; }
     public int PageNumber { get; set; }
-    public required Filters Filters { get; set; }
+    public FilterRequest? Filters { get; set; }
+}
+
+public record FilterRequest
+{
+    [JsonPropertyName("filters")]
+    public Filters? Filters { get; set; }
 }
 
 public record Filters

@@ -27,17 +27,19 @@ public class OnlineDaClient : IOnlineDAClient
 
     public async Task<Result<OnlineDAResponse>> GetOnlineDARecordsAsync(int pageSize, int pageNumber)
     {
-        var filters = new Filters
+        var filterRequest = new FilterRequest
+        {
+            Filters = new Filters
             {
                 CouncilName = ["Council of the City of Sydney"],
                 ApplicationType = ApplicationType.DevelopmentApplication,
                 ApplicationStatus = [ApplicationStatus.Determined],
-                DeterminationDateFrom = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1)),
-                LodgementDateFrom = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1))
-            };
+                DeterminationDateFrom = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1))
+            }
+        };
 
-        var filtersString = JsonSerializer.Serialize(filters, _jsonSerializerOptions);
-        var response = await _daApi.GetOnlineDARecordsAsync(pageSize, pageNumber, filtersString);
+        var filtersRequestString = JsonSerializer.Serialize(filterRequest, _jsonSerializerOptions);
+        var response = await _daApi.GetOnlineDARecordsAsync(pageSize, pageNumber, filtersRequestString);
 
         return response.IsSuccessful ? Result<OnlineDAResponse>.Success(response.Content!) :
             Result<OnlineDAResponse>.Failure($"API call failed with status code {response.StatusCode} and message: {response.Error.InnerException}");

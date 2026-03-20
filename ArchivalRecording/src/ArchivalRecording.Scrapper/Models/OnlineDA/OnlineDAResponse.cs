@@ -9,7 +9,7 @@ public record OnlineDAResponse
     public int TotalPages { get; init; }
     public int TotalCount { get; init; }
     [JsonPropertyName("Application")]
-    public required IEnumerable<DevelopmentApplication> DevelopmentApplications { get; init; }
+    public IEnumerable<DevelopmentApplication>? DevelopmentApplications { get; init; }
 }
 
 public record DevelopmentApplication
@@ -39,7 +39,7 @@ public record DevelopmentApplication
 
 public record CouncilInfo
 {
-    public required string CouncilName { get; init; }
+    public string? CouncilName { get; init; }
 }
 
 public record Address
