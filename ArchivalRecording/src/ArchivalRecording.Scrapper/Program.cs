@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DevelopmentProposalScrapper;
 using DevelopmentProposalScrapper.Application;
+using DevelopmentProposalScrapper.Infrastructure;
 using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using Refit;
@@ -37,6 +38,9 @@ builder.Services.AddRefitClient<IOnlineDAApi>(new RefitSettings
     .ConfigureHttpClient(c => { c.BaseAddress = new Uri("https://api.apps1.nsw.gov.au"); })
     .AddHttpMessageHandler<HttpLoggingHandler>();
 builder.Services.AddScoped<IOnlineDAClient, OnlineDaClient>();
+
+// Infrastructure
+builder.Services.AddInfrastructureServices(configuration);
 
 var host = builder.Build();
 
