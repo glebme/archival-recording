@@ -10,6 +10,6 @@ public record DevelopmentApplication
     public ApplicationStatus? ApplicationStatus { get; init; }
     public ApplicationType? ApplicationType { get; init; }
     public CouncilInfo? Council { get; init; }
-    public IEnumerable<ProposedDevelopmentType>? DevelopmentType { get; init; }
-    public IEnumerable<Address>? Location { get; init; } 
+    public IEnumerable<ProposedDevelopmentType>? ProposedDevelopmentTypes { get; init; }
+    public IEnumerable<Address>? Addresses { get; init; }
 }

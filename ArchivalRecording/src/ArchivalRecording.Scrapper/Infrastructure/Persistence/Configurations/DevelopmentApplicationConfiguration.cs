@@ -19,7 +19,8 @@ public class DevelopmentApplicationConfiguration : IEntityTypeConfiguration<Deve
         builder.Property(da => da.DeterminationDate)
             .IsRequired();
 
-        builder.Property(da => da.ApplicationStatus);
+        builder.Property(da => da.ApplicationStatus)
+            .HasConversion<string>();
 
         builder.Property(da => da.ApplicationType);
 
@@ -29,13 +30,13 @@ public class DevelopmentApplicationConfiguration : IEntityTypeConfiguration<Deve
                 .HasMaxLength(200);
         });
 
-        builder.OwnsMany(da => da.DevelopmentType, devType =>
+        builder.OwnsMany(da => da.ProposedDevelopmentTypes, devType =>
         {
             devType.Property(dt => dt.DevelopmentType)
                 .HasMaxLength(200);
         });
 
-        builder.OwnsMany(da => da.Location, location =>
+        builder.OwnsMany(da => da.Addresses, location =>
         {
             location.Property(l => l.FullAddress)
                 .HasMaxLength(500);

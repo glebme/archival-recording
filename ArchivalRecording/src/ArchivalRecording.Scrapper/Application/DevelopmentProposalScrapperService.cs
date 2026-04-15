@@ -1,3 +1,5 @@
+using DevelopmentProposalScrapper.Domain.Entities;
+using DevelopmentProposalScrapper.Domain.Repositories;
 using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 using Microsoft.Extensions.Options;
 using NCrontab;
@@ -45,6 +47,34 @@ public class DevelopmentProposalScrapperService : BackgroundService
                 {
                     var records = result.Model!;
                     _logger.LogInformation("Fetched {count} records.", records.TotalCount);
+
+                    var developmentApplications = records.DevelopmentApplications?
+                        .Select(da => new DevelopmentApplication
+                        {
+                            PlanningPortalApplicationNumber = da.PlanningPortalApplicationNumber,
+                            DateLastUpdated = da.DateLastUpdated.HasValue ? TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(da.DateLastUpdated.Value, DateTimeKind.Unspecified), TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney")) : null,
+                            DeterminationDate = da.DeterminationDate,
+                            ApplicationStatus = da.ApplicationStatus,
+                            ApplicationType = da.ApplicationType,
+                            Council = da.Council,
+                            ProposedDevelopmentTypes = da.DevelopmentType,
+                            Addresses = da.Location
+                        })
+                        .ToList() ?? [];
+
+                    if (developmentApplications.Count != 0)
+                    {
+                        try
+                        {
+                            var repository = scope.ServiceProvider.GetRequiredService<IDevelopmentApplicationRepository>();
+                            await repository.SaveDevelopmentApplications(developmentApplications);
+                            _logger.LogInformation("Saved {count} records to database.", developmentApplications.Count);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to save records to database.");
+                        }
+                    }
                 }
                 else
                 {
