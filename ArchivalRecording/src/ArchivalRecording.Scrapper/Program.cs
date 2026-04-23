@@ -9,7 +9,7 @@ using Shared;
 using Shared.JsonConverters;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<DevelopmentProposalScrapperService>();
+builder.Services.AddHostedService<DevelopmentProposalScrapperWorker>();
 
 // Configure settings
 var configuration = builder.Configuration;
@@ -40,6 +40,9 @@ builder.Services.AddScoped<IOnlineDAClient, OnlineDaClient>();
 
 // Infrastructure
 builder.Services.AddInfrastructureServices(configuration);
+
+// Services
+builder.Services.AddScoped<IDevelopmentProposalScrapperService, DevelopmentProposalScrapperService>();
 
 var host = builder.Build();
 

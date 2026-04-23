@@ -1,88 +1,69 @@
-using DevelopmentProposalScrapper.Domain.Entities;
 using DevelopmentProposalScrapper.Domain.Repositories;
 using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
-using Microsoft.Extensions.Options;
-using NCrontab;
+using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
+using Shared;
+using DevelopmentApplication = DevelopmentProposalScrapper.Domain.Entities.DevelopmentApplication;
 
 namespace DevelopmentProposalScrapper.Application;
 
-public class DevelopmentProposalScrapperService : BackgroundService
+public interface IDevelopmentProposalScrapperService
 {
-    private readonly ILogger<DevelopmentProposalScrapperService> _logger;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly CrontabSchedule _schedule;
-    private readonly DevelopmentProposalScrapperSettings _settings;
+    public Task<int> FetchDaApplications();
+}
 
-    private DateTime _nextRun;
-
-    public DevelopmentProposalScrapperService(ILogger<DevelopmentProposalScrapperService> logger, IOptions<DevelopmentProposalScrapperSettings> options, IServiceScopeFactory serviceScopeFactory)
+public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScrapperService> logger, IOnlineDAClient onlineDaClient, IDevelopmentApplicationRepository developmentApplicationRepository) : IDevelopmentProposalScrapperService
+{
+    public async Task<int> FetchDaApplications()
     {
-        _logger = logger;
-        _serviceScopeFactory = serviceScopeFactory;
-        _settings = options.Value ?? throw new ArgumentNullException(nameof(options), "DevelopmentProposalScrapperSettings cannot be null.");
+        Result<OnlineDAResponse>? result = null;
 
-        _schedule = CrontabSchedule.Parse(_settings.CronSchedule);
-        _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
-        _logger.LogInformation("Worker scheduled to run at: {time}", _nextRun);
-        _logger.LogInformation("Starting Development Proposal Scrapper...");
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            if (DateTime.Now >= _nextRun && _settings.IsEnabled)
+            await onlineDaClient.GetOnlineDARecordsAsync(5, 14);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to fetch records from OnlineDA API due to exception");
+            
+            return 0;
+        }
+
+        if (result is { IsSuccess: true, Model: not null })
+        {
+            var records = result.Model!;
+            logger.LogInformation("Fetched {count} records.", records.TotalCount);
+
+            var developmentApplications = records.DevelopmentApplications?
+                .Select(da => new DevelopmentApplication
+                {
+                    PlanningPortalApplicationNumber = da.PlanningPortalApplicationNumber,
+                    DateLastUpdated = da.DateLastUpdated.HasValue ? TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(da.DateLastUpdated.Value, DateTimeKind.Unspecified), TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney")) : null,
+                    DeterminationDate = da.DeterminationDate,
+                    ApplicationStatus = da.ApplicationStatus,
+                    ApplicationType = da.ApplicationType,
+                    Council = da.Council,
+                    ProposedDevelopmentTypes = da.DevelopmentType,
+                    Addresses = da.Location
+                })
+                .ToList() ?? [];
+
+            if (developmentApplications.Count == 0) return developmentApplications.Count;
+            
+            try
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                
-                using var scope = _serviceScopeFactory.CreateScope();
-                var client = scope.ServiceProvider.GetRequiredService<IOnlineDAClient>();
-                
-                var result = await client.GetOnlineDARecordsAsync(5, 14);
-
-                if (result is { IsSuccess: true, Model: not null })
-                {
-                    var records = result.Model!;
-                    _logger.LogInformation("Fetched {count} records.", records.TotalCount);
-
-                    var developmentApplications = records.DevelopmentApplications?
-                        .Select(da => new DevelopmentApplication
-                        {
-                            PlanningPortalApplicationNumber = da.PlanningPortalApplicationNumber,
-                            DateLastUpdated = da.DateLastUpdated.HasValue ? TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(da.DateLastUpdated.Value, DateTimeKind.Unspecified), TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney")) : null,
-                            DeterminationDate = da.DeterminationDate,
-                            ApplicationStatus = da.ApplicationStatus,
-                            ApplicationType = da.ApplicationType,
-                            Council = da.Council,
-                            ProposedDevelopmentTypes = da.DevelopmentType,
-                            Addresses = da.Location
-                        })
-                        .ToList() ?? [];
-
-                    if (developmentApplications.Count != 0)
-                    {
-                        try
-                        {
-                            var repository = scope.ServiceProvider.GetRequiredService<IDevelopmentApplicationRepository>();
-                            await repository.SaveDevelopmentApplications(developmentApplications);
-                            _logger.LogInformation("Saved {count} records to database.", developmentApplications.Count);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Failed to save records to database.");
-                        }
-                    }
-                }
-                else
-                {
-                    _logger.LogError("Failed to fetch records: {error}", result.ErrorMessage);
-                }
+                await developmentApplicationRepository.SaveDevelopmentApplications(developmentApplications);
+                logger.LogInformation("Saved {count} records to database.", developmentApplications.Count);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to save records to database.");
             }
 
-            _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
-            var delay = _nextRun - DateTime.Now;
-
-            await Task.Delay(delay, stoppingToken);
+            return developmentApplications.Count;
         }
+
+        logger.LogError("Failed to fetch records: {error}", result?.ErrorMessage);
+
+        return 0;
     }
 }
