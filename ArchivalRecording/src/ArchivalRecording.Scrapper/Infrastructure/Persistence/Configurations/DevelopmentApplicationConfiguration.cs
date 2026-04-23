@@ -19,8 +19,7 @@ public class DevelopmentApplicationConfiguration : IEntityTypeConfiguration<Deve
         builder.Property(da => da.DeterminationDate)
             .IsRequired();
 
-        builder.Property(da => da.ApplicationStatus)
-            .HasConversion<string>();
+        builder.Property(da => da.ApplicationStatus);
 
         builder.Property(da => da.ApplicationType);
 

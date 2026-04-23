@@ -2,18 +2,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DevelopmentProposalScrapper.Infrastructure;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext(IConfiguration configuration) : DbContext
 {
-    private readonly IConfiguration _configuration;
-
-    public ApplicationDbContext(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseNpgsql(_configuration.GetConnectionString("PostgresConnectionString"));
+        optionsBuilder.UseNpgsql(configuration.GetConnectionString("PostgresConnectionString"));
     }
     
    protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -28,8 +28,8 @@ namespace DevelopmentProposalScrapper.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("ApplicationStatus")
-                        .HasColumnType("text");
+                    b.Property<int?>("ApplicationStatus")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("ApplicationType")
                         .HasColumnType("integer");
@@ -42,7 +42,7 @@ namespace DevelopmentProposalScrapper.Migrations
 
                     b.HasKey("PlanningPortalApplicationNumber");
 
-                    b.ToTable("DevelopmentApplications");
+                    b.ToTable("DevelopmentApplications", (string)null);
                 });
 
             modelBuilder.Entity("DevelopmentProposalScrapper.Domain.Entities.DevelopmentApplication", b =>
@@ -104,7 +104,7 @@ namespace DevelopmentProposalScrapper.Migrations
 
                             b1.HasKey("DevelopmentApplicationPlanningPortalApplicationNumber", "Id");
 
-                            b1.ToTable("Address");
+                            b1.ToTable("Address", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("DevelopmentApplicationPlanningPortalApplicationNumber");
@@ -134,7 +134,7 @@ namespace DevelopmentProposalScrapper.Migrations
 
                                     b2.HasKey("AddressDevelopmentApplicationPlanningPortalApplicationNumber", "AddressId", "Id");
 
-                                    b2.ToTable("Lot");
+                                    b2.ToTable("Lot", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("AddressDevelopmentApplicationPlanningPortalApplicationNumber", "AddressId");
@@ -154,7 +154,7 @@ namespace DevelopmentProposalScrapper.Migrations
 
                             b1.HasKey("DevelopmentApplicationPlanningPortalApplicationNumber");
 
-                            b1.ToTable("DevelopmentApplications");
+                            b1.ToTable("DevelopmentApplications", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("DevelopmentApplicationPlanningPortalApplicationNumber");
@@ -177,7 +177,7 @@ namespace DevelopmentProposalScrapper.Migrations
 
                             b1.HasKey("DevelopmentApplicationPlanningPortalApplicationNumber", "Id");
 
-                            b1.ToTable("ProposedDevelopmentType");
+                            b1.ToTable("ProposedDevelopmentType", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("DevelopmentApplicationPlanningPortalApplicationNumber");
