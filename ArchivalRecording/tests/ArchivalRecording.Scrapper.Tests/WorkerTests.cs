@@ -1,4 +1,5 @@
 ﻿using DevelopmentProposalScrapper.Application;
+using DevelopmentProposalScrapper.Domain.Repositories;
 using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ public class WorkerTests
     private Mock<IOptions<DevelopmentProposalScrapperSettings>> _optionsMock;
     private Mock<ILogger<DevelopmentProposalScrapperService>> _loggerMock;
     private Mock<IOnlineDAClient> _client;
+    private Mock<IDevelopmentApplicationRepository> _repositoryMock;
     private Mock<IServiceScopeFactory> _scopeFactoryMock;
     private Mock<IServiceScope> _scopeMock;
     private Mock<IServiceProvider> _serviceProviderMock;
@@ -28,6 +30,7 @@ public class WorkerTests
         _scopeMock = new Mock<IServiceScope>();
         _serviceProviderMock = new Mock<IServiceProvider>();
         _client = new Mock<IOnlineDAClient>();
+        _repositoryMock = new Mock<IDevelopmentApplicationRepository>();
     }
 
     [Test]
@@ -79,16 +82,7 @@ public class WorkerTests
         await worker.StartAsync(cts.Token);
         
         // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-            Times.Never,
-            "Worker should not log when disabled."
-        );
+        _client.VerifyNoOtherCalls();
     }
     
     private DevelopmentProposalScrapperService CreateWorker(bool isEnabled, string cronSchedule)
@@ -103,7 +97,7 @@ public class WorkerTests
         _scopeFactoryMock.Setup(f => f.CreateScope()).Returns(_scopeMock.Object);
         _scopeMock.Setup(s => s.ServiceProvider).Returns(_serviceProviderMock.Object);
         _serviceProviderMock.Setup(sp => sp.GetService(typeof(IOnlineDAClient))).Returns(_client.Object);
-        _serviceProviderMock.Setup(sp => sp.GetRequiredService<IOnlineDAClient>()).Returns(_client.Object); 
+        _serviceProviderMock.Setup(sp => sp.GetService(typeof(IDevelopmentApplicationRepository))).Returns(_repositoryMock.Object);
         
         return new DevelopmentProposalScrapperService(_loggerMock.Object, _optionsMock.Object, _scopeFactoryMock.Object);
     }
