@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using DevelopmentProposalScrapper.Domain.Entities;
 
 namespace DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 

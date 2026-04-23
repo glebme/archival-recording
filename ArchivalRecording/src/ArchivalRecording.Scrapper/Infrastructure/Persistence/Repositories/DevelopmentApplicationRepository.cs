@@ -27,6 +27,10 @@ public class DevelopmentApplicationRepository : IDevelopmentApplicationRepositor
     public async Task SaveDevelopmentApplications(IEnumerable<DevelopmentApplication> developmentApplications)
     {
         await _context.BulkInsertOrUpdateAsync(developmentApplications.ToList(),
-            options => options.PropertiesToIncludeOnUpdate = new List<string> { "DateLastUpdated", "DeterminationDate", "ApplicationStatus", "ApplicationType", "Council", "ProposedDevelopmentTypes", "Addresses" });
+            options => options.PropertiesToIncludeOnUpdate =
+            [
+                "DateLastUpdated", "DeterminationDate", "ApplicationStatus", "ApplicationType", "Council",
+                "ProposedDevelopmentTypes", "Addresses"
+            ]);
     }
 }

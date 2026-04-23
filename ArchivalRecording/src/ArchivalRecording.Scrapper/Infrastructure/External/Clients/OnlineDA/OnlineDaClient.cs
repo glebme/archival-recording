@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DevelopmentProposalScrapper.Domain.Entities;
 using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using Shared;
 using Shared.JsonConverters;

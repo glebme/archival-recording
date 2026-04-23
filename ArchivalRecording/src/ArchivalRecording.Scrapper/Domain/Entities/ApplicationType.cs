@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
+namespace DevelopmentProposalScrapper.Domain.Entities;
 
 public enum ApplicationType
 {
