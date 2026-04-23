@@ -7,11 +7,10 @@ using Shared.JsonConverters;
 
 namespace DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 
-public class OnlineDaClient : IOnlineDAClient
-{
-    private readonly IOnlineDAApi _daApi;
 
-    private static JsonSerializerOptions _jsonSerializerOptions = new()
+public class OnlineDAClient(IOnlineDAApi daApi) : IOnlineDAClient
+{
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters =
@@ -21,26 +20,21 @@ public class OnlineDaClient : IOnlineDAClient
         }
     };
 
-    public OnlineDaClient(IOnlineDAApi daApi)
-    {
-        _daApi = daApi;
-    }
-
-    public async Task<Result<OnlineDAResponse>> GetOnlineDARecordsAsync(int pageSize, int pageNumber)
+    public async Task<Result<OnlineDAResponse>> GetDeterminedApplications(IReadOnlyList<string> councils, DateOnly startDate, int pageSize, int pageNumber)
     {
         var filterRequest = new FilterRequest
         {
             Filters = new Filters
             {
-                CouncilName = ["Council of the City of Sydney"],
+                CouncilName = councils,
                 ApplicationType = ApplicationType.DevelopmentApplication,
                 ApplicationStatus = [ApplicationStatus.Determined],
-                DeterminationDateFrom = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1))
+                DeterminationDateFrom = startDate
             }
         };
 
-        var filtersRequestString = JsonSerializer.Serialize(filterRequest, _jsonSerializerOptions);
-        var response = await _daApi.GetOnlineDARecordsAsync(pageSize, pageNumber, filtersRequestString);
+        var filtersRequestString = JsonSerializer.Serialize(filterRequest, JsonSerializerOptions);
+        var response = await daApi.GetOnlineDARecordsAsync(pageSize, pageNumber, filtersRequestString);
 
         return response.IsSuccessful ? Result<OnlineDAResponse>.Success(response.Content!) :
             Result<OnlineDAResponse>.Failure($"API call failed with status code {response.StatusCode} and message: {response.Error.InnerException}");

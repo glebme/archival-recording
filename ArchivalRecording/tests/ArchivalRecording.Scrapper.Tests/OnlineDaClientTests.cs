@@ -11,13 +11,15 @@ namespace DevelopmentProposalScrapperTests;
 public class OnlineDaClientTests
 {
     private Mock<IOnlineDAApi> _apiMock;
-    private OnlineDaClient _client;
+    private OnlineDAClient _client;
+    private IReadOnlyList<string> _councils = ["Council of the City of Sydney"];
+    private DateOnly _startDate = new(2026, 04, 24);
 
     [SetUp]
     public void Setup()
     {
         _apiMock = new Mock<IOnlineDAApi>();
-        _client = new OnlineDaClient(_apiMock.Object);
+        _client = new OnlineDAClient(_apiMock.Object);
     }
 
     [Test]
@@ -40,9 +42,9 @@ public class OnlineDaClientTests
                     ApplicationStatus = ApplicationStatus.Determined,
                     ApplicationType = ApplicationType.DevelopmentApplication,
                     Council = new CouncilInfo { CouncilName = "Council of the City of Sydney" },
-                    DevelopmentType = new[] { new ProposedDevelopmentType { DevelopmentType = "Residential" } },
-                    Location = new[]
-                    {
+                    DevelopmentType = [new ProposedDevelopmentType { DevelopmentType = "Residential" }],
+                    Location =
+                    [
                         new Address
                         {
                             FullAddress = "123 Main St, Sydney NSW 2000",
@@ -50,7 +52,7 @@ public class OnlineDaClientTests
                             Postcode = "2000",
                             State = "NSW"
                         }
-                    }
+                    ]
                 }
             ]
         };
@@ -67,7 +69,7 @@ public class OnlineDaClientTests
             .ReturnsAsync(mockApiResponse.Object);
 
         // Act
-        var result = await _client.GetOnlineDARecordsAsync(1, 1);
+        var result = await _client.GetDeterminedApplications(_councils, _startDate, 1, 1);
 
         Assert.Multiple(() =>
         {
@@ -100,7 +102,7 @@ public class OnlineDaClientTests
             .ReturnsAsync(mockApiResponse.Object);
 
         // Act
-        var result = await _client.GetOnlineDARecordsAsync(1, 1);
+        var result = await _client.GetDeterminedApplications(_councils, _startDate, 1, 1);
 
         // Assert
         Assert.That(result.IsSuccess, Is.False);
@@ -133,7 +135,7 @@ public class OnlineDaClientTests
             .ReturnsAsync(mockApiResponse.Object);
 
         // Act
-        var result = await _client.GetOnlineDARecordsAsync(1, 1);
+        var result = await _client.GetDeterminedApplications(_councils, _startDate, 1, 1);
 
         Assert.Multiple(() =>
         {

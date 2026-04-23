@@ -28,15 +28,15 @@ public class DevelopmentProposalScrapperWorker : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (DateTime.Now >= _nextRun && _settings.IsEnabled)
-            {
+            // if (DateTime.Now >= _nextRun && _settings.IsEnabled)
+            // {
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
                 
                 using var scope = _serviceScopeFactory.CreateScope();
                 var scrapperService = scope.ServiceProvider.GetRequiredService<IDevelopmentProposalScrapperService>();
 
                 _ = scrapperService.FetchDaApplications();
-            }
+            // }
 
             _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
             var delay = _nextRun - DateTime.Now;

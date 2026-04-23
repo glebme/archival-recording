@@ -6,20 +6,16 @@ using DevelopmentApplication = DevelopmentProposalScrapper.Domain.Entities.Devel
 
 namespace DevelopmentProposalScrapper.Application;
 
-public interface IDevelopmentProposalScrapperService
-{
-    public Task<int> FetchDaApplications();
-}
-
 public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScrapperService> logger, IOnlineDAClient onlineDaClient, IDevelopmentApplicationRepository developmentApplicationRepository) : IDevelopmentProposalScrapperService
 {
     public async Task<int> FetchDaApplications()
     {
-        Result<OnlineDAResponse>? result = null;
+        Result<OnlineDAResponse>? result;
 
         try
         {
-            await onlineDaClient.GetOnlineDARecordsAsync(5, 14);
+            //TODO: fetch using IEnumerable pattern to grab all documents as needed and save them as needed
+            result = await onlineDaClient.GetDeterminedApplications(["Council of the City of Sydney"], DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1)), 5, 14);
         }
         catch (Exception ex)
         {
@@ -34,7 +30,7 @@ public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScra
             logger.LogInformation("Fetched {count} records.", records.TotalCount);
 
             var developmentApplications = records.DevelopmentApplications?
-                .Select(da => new DevelopmentApplication
+                .Select(da => new DevelopmentApplication()
                 {
                     PlanningPortalApplicationNumber = da.PlanningPortalApplicationNumber,
                     DateLastUpdated = da.DateLastUpdated.HasValue ? TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(da.DateLastUpdated.Value, DateTimeKind.Unspecified), TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney")) : null,
@@ -51,6 +47,7 @@ public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScra
             
             try
             {
+                // TODO fix council column field naming in migration so that it matches the PropertiesToUpdate 
                 await developmentApplicationRepository.SaveDevelopmentApplications(developmentApplications);
                 logger.LogInformation("Saved {count} records to database.", developmentApplications.Count);
             }
