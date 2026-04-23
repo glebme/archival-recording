@@ -1,12 +1,8 @@
 ﻿using DevelopmentProposalScrapper.Application;
-using DevelopmentProposalScrapper.Domain.Repositories;
-using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
-using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Shared;
 
 namespace DevelopmentProposalScrapperTests;
 
@@ -14,7 +10,7 @@ namespace DevelopmentProposalScrapperTests;
 public class WorkerTests
 {
     private Mock<IOptions<DevelopmentProposalScrapperSettings>> _optionsMock;
-    private Mock<ILogger<DevelopmentProposalScrapper.Application.DevelopmentProposalScrapperWorker>> _loggerMock;
+    private Mock<ILogger<DevelopmentProposalScrapperWorker>> _loggerMock;
     private Mock<IDevelopmentProposalScrapperService> _scrapperServiceMock;
     private Mock<IServiceScopeFactory> _scopeFactoryMock;
     private Mock<IServiceScope> _scopeMock;
