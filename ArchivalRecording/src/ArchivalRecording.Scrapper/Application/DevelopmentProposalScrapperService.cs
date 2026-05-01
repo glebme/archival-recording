@@ -10,57 +10,88 @@ public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScra
 {
     public async Task<int> FetchDaApplications()
     {
-        Result<OnlineDAResponse>? result;
-
-        try
+        // TODO fix unit tests, and run
+        var savedRecords = 0;
+        await foreach (var records in GetAllDeterminedApplicationsAfterCertainDate(
+                     councils: ["Inner West Council", "City of Sydney Council", "Waverley Council", "Randwick City Council"],
+                     startDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-7)),
+                     pageSize: 100))
         {
-            //TODO: fetch using IEnumerable pattern to grab all documents as needed and save them as needed
-            result = await onlineDaClient.GetDeterminedApplications(["Council of the City of Sydney"], DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1)), 5, 14);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to fetch records from OnlineDA API due to exception");
-            
-            return 0;
-        }
+            var developmentApplications = records.Select(da => new DevelopmentApplication()
+            {
+                PlanningPortalApplicationNumber = da.PlanningPortalApplicationNumber,
+                DateLastUpdated = da.DateLastUpdated.HasValue ? TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(da.DateLastUpdated.Value, DateTimeKind.Unspecified), TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney")) : null,
+                DeterminationDate = da.DeterminationDate,
+                ApplicationStatus = da.ApplicationStatus,
+                ApplicationType = da.ApplicationType,
+                Council = da.Council,
+                ProposedDevelopmentTypes = da.DevelopmentType,
+                Addresses = da.Location
+            }).ToList();
 
-        if (result is { IsSuccess: true, Model: not null })
-        {
-            var records = result.Model!;
-            logger.LogInformation("Fetched {count} records.", records.TotalCount);
-
-            var developmentApplications = records.DevelopmentApplications?
-                .Select(da => new DevelopmentApplication()
-                {
-                    PlanningPortalApplicationNumber = da.PlanningPortalApplicationNumber,
-                    DateLastUpdated = da.DateLastUpdated.HasValue ? TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(da.DateLastUpdated.Value, DateTimeKind.Unspecified), TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney")) : null,
-                    DeterminationDate = da.DeterminationDate,
-                    ApplicationStatus = da.ApplicationStatus,
-                    ApplicationType = da.ApplicationType,
-                    Council = da.Council,
-                    ProposedDevelopmentTypes = da.DevelopmentType,
-                    Addresses = da.Location
-                })
-                .ToList() ?? [];
-
-            if (developmentApplications.Count == 0) return developmentApplications.Count;
-            
             try
             {
-                // TODO fix council column field naming in migration so that it matches the PropertiesToUpdate 
+                // TODO fix council column field naming in migration so that it matches the PropertiesToUpdate
                 await developmentApplicationRepository.SaveDevelopmentApplications(developmentApplications);
-                logger.LogInformation("Saved {count} records to database.", developmentApplications.Count);
+
+                var successfullySaved = developmentApplications.Count;
+                logger.LogInformation("Saved {count} records to database", successfullySaved);
+                savedRecords +=  successfullySaved;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to save records to database.");
+                // TODO retry mechanism?
+                logger.LogError(ex, "Failed to save records to database");
             }
-
-            return developmentApplications.Count;
         }
 
-        logger.LogError("Failed to fetch records: {error}", result?.ErrorMessage);
+        return savedRecords;
+    }
+    
+    
+    private async IAsyncEnumerable<IEnumerable<DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA.DevelopmentApplication>> GetAllDeterminedApplicationsAfterCertainDate(
+        IReadOnlyList<string> councils, DateOnly startDate, int pageSize)
+    {
+        int? totalPages = null;
+        var currentPage = 0;
 
-        return 0;
+        do
+        {
+            Result<OnlineDAResponse>? result;
+            
+            try
+            {
+                 result =
+                    await onlineDaClient.GetDeterminedApplications(councils, startDate, pageSize, currentPage);
+
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to fetch records from OnlineDA API due to exception");
+            
+                yield break; 
+            }
+
+            if (!result.IsSuccess)
+            {
+                logger.LogError("Failed to fetch records from OnlineDA API. Error: {ErrorMessage}", result.ErrorMessage);
+                
+                yield break;
+            } 
+            
+            if (result.Model is null)
+            {
+                logger.LogWarning("No records to fetch");
+                
+                yield break;
+            }
+            
+            totalPages ??= result.Model.TotalPages;
+            currentPage++;
+
+            if (result.Model.DevelopmentApplications is null) yield break;
+            
+            yield return result.Model.DevelopmentApplications;
+        } while (currentPage < totalPages);
     }
 }
