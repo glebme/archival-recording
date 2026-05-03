@@ -17,6 +17,12 @@ public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScra
                      startDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-7)),
                      pageSize: 100))
         {
+            if (records.Count() == 0)
+            {
+                logger.LogInformation("No records fetched from OnlineDA API");
+                continue;
+            }
+            
             var developmentApplications = records.Select(da => new DevelopmentApplication()
             {
                 PlanningPortalApplicationNumber = da.PlanningPortalApplicationNumber,
@@ -49,6 +55,7 @@ public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScra
     }
     
     
+    // TODO think about progressing if one page fails - currently it will stop the entire process, but maybe we want to continue with the next page?
     private async IAsyncEnumerable<IEnumerable<DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA.DevelopmentApplication>> GetAllDeterminedApplicationsAfterCertainDate(
         IReadOnlyList<string> councils, DateOnly startDate, int pageSize)
     {
