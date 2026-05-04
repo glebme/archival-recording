@@ -23,7 +23,7 @@ public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScra
                 continue;
             }
             
-            var developmentApplications = records.Select(da => new DevelopmentApplication()
+            var developmentApplications = records.Select(da => new DevelopmentApplication
             {
                 PlanningPortalApplicationNumber = da.PlanningPortalApplicationNumber,
                 DateLastUpdated = da.DateLastUpdated.HasValue ? TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(da.DateLastUpdated.Value, DateTimeKind.Unspecified), TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney")) : null,
@@ -60,12 +60,13 @@ public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScra
         IReadOnlyList<string> councils, DateOnly startDate, int pageSize)
     {
         int? totalPages = null;
-        var currentPage = 0;
+        var currentPage = 1;
 
         do
         {
-            Result<OnlineDAResponse>? result;
+            if (currentPage > totalPages) yield break;
             
+            Result<OnlineDAResponse>? result;
             try
             {
                  result =

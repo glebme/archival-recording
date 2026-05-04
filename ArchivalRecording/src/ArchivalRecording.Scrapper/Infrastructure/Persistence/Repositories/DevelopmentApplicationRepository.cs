@@ -1,6 +1,6 @@
 using DevelopmentProposalScrapper.Domain.Entities;
 using DevelopmentProposalScrapper.Domain.Repositories;
-using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevelopmentProposalScrapper.Infrastructure.Persistence.Repositories;
 
@@ -26,11 +26,36 @@ public class DevelopmentApplicationRepository : IDevelopmentApplicationRepositor
 
     public async Task SaveDevelopmentApplications(IEnumerable<DevelopmentApplication> developmentApplications)
     {
-        await _context.BulkInsertOrUpdateAsync(developmentApplications.ToList(),
-            options => options.PropertiesToIncludeOnUpdate =
-            [
-                "DateLastUpdated", "DeterminationDate", "ApplicationStatus", "ApplicationType", "Council",
-                "ProposedDevelopmentTypes", "Addresses"
-            ]);
+        var appsToSave = developmentApplications.ToList();
+        
+        // Get existing application numbers to determine insert vs update
+        var existingNumbers = await _context.DevelopmentApplications
+            .Where(x => appsToSave.Select(y => y.PlanningPortalApplicationNumber).Contains(x.PlanningPortalApplicationNumber))
+            .Select(x => x.PlanningPortalApplicationNumber)
+            .ToListAsync();
+
+        foreach (var app in appsToSave)
+        {
+            if (existingNumbers.Contains(app.PlanningPortalApplicationNumber))
+            {
+                // Update existing record
+                var existing = await _context.DevelopmentApplications
+                    .FirstAsync(x => x.PlanningPortalApplicationNumber == app.PlanningPortalApplicationNumber);
+                
+                existing.DateLastUpdated = app.DateLastUpdated;
+                existing.DeterminationDate = app.DeterminationDate;
+                existing.ApplicationStatus = app.ApplicationStatus;
+                existing.ApplicationType = app.ApplicationType;
+                
+                _context.DevelopmentApplications.Update(existing);
+            }
+            else
+            {
+                // Insert new record
+                _context.DevelopmentApplications.Add(app);
+            }
+        }
+
+        await _context.SaveChangesAsync();
     }
 }
