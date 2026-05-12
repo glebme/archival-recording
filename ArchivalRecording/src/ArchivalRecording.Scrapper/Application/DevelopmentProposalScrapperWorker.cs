@@ -34,8 +34,8 @@ public class DevelopmentProposalScrapperWorker : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (_timeProvider.GetLocalNow().DateTime >= _nextRun && _settings.IsEnabled)
-            {
+            // if (_timeProvider.GetLocalNow().DateTime >= _nextRun && _settings.IsEnabled)
+            // {
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
 
                 using var scope = _serviceScopeFactory.CreateScope();
@@ -49,7 +49,7 @@ public class DevelopmentProposalScrapperWorker : BackgroundService
                 {
                     _logger.LogError(ex, "Scrapper service encountered an unhandled exception");
                 }
-            }
+            // }
 
             _nextRun = _schedule.GetNextOccurrence(_timeProvider.GetLocalNow().DateTime);
             var delay = _nextRun - _timeProvider.GetLocalNow().DateTime;
