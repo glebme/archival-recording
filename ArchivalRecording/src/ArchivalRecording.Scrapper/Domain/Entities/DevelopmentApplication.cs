@@ -10,6 +10,7 @@ public record DevelopmentApplication
     public ApplicationStatus? ApplicationStatus { get; set; }
     public ApplicationType? ApplicationType { get; set; }
     public CouncilInfo? Council { get; init; }
+    public required string CouncilApplicationNumber { get; init; }
     public IEnumerable<ProposedDevelopmentType>? ProposedDevelopmentTypes { get; init; }
     public IEnumerable<Address>? Addresses { get; init; }
 }

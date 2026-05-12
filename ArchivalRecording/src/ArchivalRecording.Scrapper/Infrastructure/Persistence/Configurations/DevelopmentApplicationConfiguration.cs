@@ -29,6 +29,9 @@ public class DevelopmentApplicationConfiguration : IEntityTypeConfiguration<Deve
                 .HasMaxLength(200);
         });
 
+        builder.Property(da => da.CouncilApplicationNumber)
+            .IsRequired();
+
         builder.OwnsMany(da => da.ProposedDevelopmentTypes, devType =>
         {
             devType.Property(dt => dt.DevelopmentType)

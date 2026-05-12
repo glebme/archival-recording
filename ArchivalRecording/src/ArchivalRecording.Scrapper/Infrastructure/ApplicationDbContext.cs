@@ -6,7 +6,8 @@ public class ApplicationDbContext(IConfiguration configuration) : DbContext
 {
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseNpgsql(configuration.GetConnectionString("PostgresConnectionString"));
+        if (!optionsBuilder.IsConfigured)
+            optionsBuilder.UseNpgsql(configuration.GetConnectionString("PostgresConnectionString"));
     }
     
    protected override void OnModelCreating(ModelBuilder modelBuilder)

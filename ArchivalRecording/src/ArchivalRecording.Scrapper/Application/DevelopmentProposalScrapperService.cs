@@ -43,6 +43,7 @@ public class DevelopmentProposalScrapperService(
                 ApplicationStatus = da.ApplicationStatus,
                 ApplicationType = da.ApplicationType,
                 Council = da.Council,
+                CouncilApplicationNumber = da.CouncilApplicationNumber,
                 ProposedDevelopmentTypes = da.DevelopmentType,
                 Addresses = da.Location
             }).ToList();
