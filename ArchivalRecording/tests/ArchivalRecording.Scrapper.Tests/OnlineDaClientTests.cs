@@ -111,6 +111,29 @@ public class OnlineDaClientTests
     }
 
     [Test]
+    public async Task GetDeterminedApplications_ReturnsFailure_WithoutThrowing_WhenErrorIsNull()
+    {
+        // Arrange — simulate a scenario where Refit sets IsSuccessful=false but Error=null
+        var mockApiResponse = new Mock<IApiResponse<OnlineDAResponse>>();
+        mockApiResponse.Setup(x => x.IsSuccessful).Returns(false);
+        mockApiResponse.Setup(x => x.StatusCode).Returns(System.Net.HttpStatusCode.ServiceUnavailable);
+        mockApiResponse.Setup(x => x.Error).Returns((ApiException?)null);
+
+        _apiMock.Setup(x => x.GetOnlineDARecordsAsync(
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string>()))
+            .ReturnsAsync(mockApiResponse.Object);
+
+        // Act — should not throw NullReferenceException
+        var result = await _client.GetDeterminedApplications(_councils, _startDate, 1, 1);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.ErrorMessage, Does.Contain("ServiceUnavailable"));
+    }
+
+    [Test]
     public async Task GetOnlineDARecordsAsync_ReturnsEmptyDevelopmentApplicationsList_WhenNoRecordsReturned()
     {
         // Arrange

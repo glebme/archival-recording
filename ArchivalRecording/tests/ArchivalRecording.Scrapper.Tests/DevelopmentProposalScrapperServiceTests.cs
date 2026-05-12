@@ -4,7 +4,9 @@ using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using DevelopmentProposalScrapper.Domain.Entities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
+using Polly;
 using Shared;
 using DomainDevelopmentApplication = DevelopmentProposalScrapper.Domain.Entities.DevelopmentApplication;
 using OnlineDADevelopmentApplication = DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA.DevelopmentApplication;
@@ -25,7 +27,7 @@ public class DevelopmentProposalScrapperServiceTests
         _loggerMock = new Mock<ILogger<IDevelopmentProposalScrapperService>>();
         _onlineDaClientMock = new Mock<IOnlineDAClient>();
         _repositoryMock = new Mock<IDevelopmentApplicationRepository>();
-        _service = new DevelopmentProposalScrapperService(_loggerMock.Object, _onlineDaClientMock.Object, _repositoryMock.Object);
+        _service = CreateService();
     }
 
     [Test]
@@ -148,7 +150,7 @@ public class DevelopmentProposalScrapperServiceTests
 
         // Assert
         Assert.That(result, Is.EqualTo(3));
-        
+
         _repositoryMock.Verify(
             r => r.SaveDevelopmentApplications(It.IsAny<IEnumerable<DomainDevelopmentApplication>>()),
             Times.Exactly(2),
@@ -224,32 +226,9 @@ public class DevelopmentProposalScrapperServiceTests
             CreateOnlineDAApplication("APP-008", "Randwick City Council")
         };
 
-        var page1Response = new OnlineDAResponse
-        {
-            PageNumber = 1,
-            PageSize = 3,
-            TotalPages = 3,
-            TotalCount = 8,
-            DevelopmentApplications = page1
-        };
-
-        var page2Response = new OnlineDAResponse
-        {
-            PageNumber = 2,
-            PageSize = 3,
-            TotalPages = 3,
-            TotalCount = 8,
-            DevelopmentApplications = page2
-        };
-
-        var page3Response = new OnlineDAResponse
-        {
-            PageNumber = 3,
-            PageSize = 3,
-            TotalPages = 3,
-            TotalCount = 8,
-            DevelopmentApplications = page3
-        };
+        var page1Response = new OnlineDAResponse { PageNumber = 1, PageSize = 3, TotalPages = 3, TotalCount = 8, DevelopmentApplications = page1 };
+        var page2Response = new OnlineDAResponse { PageNumber = 2, PageSize = 3, TotalPages = 3, TotalCount = 8, DevelopmentApplications = page2 };
+        var page3Response = new OnlineDAResponse { PageNumber = 3, PageSize = 3, TotalPages = 3, TotalCount = 8, DevelopmentApplications = page3 };
 
         _onlineDaClientMock
             .SetupSequence(c => c.GetDeterminedApplications(It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<int>(), It.IsAny<int>()))
@@ -332,33 +311,11 @@ public class DevelopmentProposalScrapperServiceTests
     public async Task FetchDaApplications_ContinuesWhenRepositoryThrowsException()
     {
         // Arrange
-        var page1Applications = new[]
-        {
-            CreateOnlineDAApplication("APP-001", "Inner West Council")
-        };
+        var page1Applications = new[] { CreateOnlineDAApplication("APP-001", "Inner West Council") };
+        var page2Applications = new[] { CreateOnlineDAApplication("APP-002", "City of Sydney Council") };
 
-        var page2Applications = new[]
-        {
-            CreateOnlineDAApplication("APP-002", "City of Sydney Council")
-        };
-
-        var page1Response = new OnlineDAResponse
-        {
-            PageNumber = 1,
-            PageSize = 1,
-            TotalPages = 2,
-            TotalCount = 2,
-            DevelopmentApplications = page1Applications
-        };
-
-        var page2Response = new OnlineDAResponse
-        {
-            PageNumber = 2,
-            PageSize = 1,
-            TotalPages = 2,
-            TotalCount = 2,
-            DevelopmentApplications = page2Applications
-        };
+        var page1Response = new OnlineDAResponse { PageNumber = 1, PageSize = 1, TotalPages = 2, TotalCount = 2, DevelopmentApplications = page1Applications };
+        var page2Response = new OnlineDAResponse { PageNumber = 2, PageSize = 1, TotalPages = 2, TotalCount = 2, DevelopmentApplications = page2Applications };
 
         _onlineDaClientMock
             .SetupSequence(c => c.GetDeterminedApplications(It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<int>(), It.IsAny<int>()))
@@ -451,14 +408,8 @@ public class DevelopmentProposalScrapperServiceTests
             ApplicationType = ApplicationType.DevelopmentApplication,
             Council = new CouncilInfo { CouncilName = "Inner West Council" },
             DeterminationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            DevelopmentType =
-            [
-                new ProposedDevelopmentType { DevelopmentType = "Residential" }
-            ],
-            Location =
-            [
-                new Address { FullAddress = "123 Main Street, Sydney, NSW 2000" }
-            ],
+            DevelopmentType = [new ProposedDevelopmentType { DevelopmentType = "Residential" }],
+            Location = [new Address { FullAddress = "123 Main Street, Sydney, NSW 2000" }],
             DateLastUpdated = DateTime.UtcNow,
             LodgementDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-10)),
             CostOfDevelopment = 1000000,
@@ -480,7 +431,7 @@ public class DevelopmentProposalScrapperServiceTests
 
         _repositoryMock
             .Setup(r => r.SaveDevelopmentApplications(It.IsAny<IEnumerable<DomainDevelopmentApplication>>()))
-            .Callback<IEnumerable<DomainDevelopmentApplication>>(batch => 
+            .Callback<IEnumerable<DomainDevelopmentApplication>>(batch =>
             {
                 var savedList = batch.ToList();
                 Assert.That(savedList, Has.Count.EqualTo(1));
@@ -502,8 +453,130 @@ public class DevelopmentProposalScrapperServiceTests
         await _service.FetchDaApplications();
     }
 
-    private static OnlineDADevelopmentApplication CreateOnlineDAApplication(
-        string appNumber, string council)
+    [Test]
+    public async Task FetchDaApplications_FetchesLastPage_WhenTotalPagesEqualsCurrentPage()
+    {
+        // Arrange — 2 pages where page 2 must be fetched (regression for off-by-one bug)
+        var page1Applications = new[] { CreateOnlineDAApplication("APP-001", "Inner West Council") };
+        var page2Applications = new[] { CreateOnlineDAApplication("APP-002", "City of Sydney Council") };
+
+        var page1Response = new OnlineDAResponse { PageNumber = 1, PageSize = 1, TotalPages = 2, TotalCount = 2, DevelopmentApplications = page1Applications };
+        var page2Response = new OnlineDAResponse { PageNumber = 2, PageSize = 1, TotalPages = 2, TotalCount = 2, DevelopmentApplications = page2Applications };
+
+        _onlineDaClientMock
+            .SetupSequence(c => c.GetDeterminedApplications(It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<OnlineDAResponse>.Success(page1Response))
+            .ReturnsAsync(Result<OnlineDAResponse>.Success(page2Response));
+
+        _repositoryMock
+            .Setup(r => r.SaveDevelopmentApplications(It.IsAny<IEnumerable<DomainDevelopmentApplication>>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _service.FetchDaApplications();
+
+        // Assert
+        Assert.That(result, Is.EqualTo(2), "Both pages should be fetched and saved");
+        _onlineDaClientMock.Verify(
+            c => c.GetDeterminedApplications(It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<int>(), It.IsAny<int>()),
+            Times.Exactly(2),
+            "API should be called exactly 2 times"
+        );
+    }
+
+    [Test]
+    public async Task FetchDaApplications_ContinuesToNextPage_WhenOnePageFails()
+    {
+        // Arrange — page 2 of 3 fails; pages 1 and 3 should still be saved
+        var page1Applications = new[] { CreateOnlineDAApplication("APP-001", "Inner West Council") };
+        var page3Applications = new[] { CreateOnlineDAApplication("APP-003", "Waverley Council") };
+
+        var page1Response = new OnlineDAResponse { PageNumber = 1, PageSize = 1, TotalPages = 3, TotalCount = 3, DevelopmentApplications = page1Applications };
+        var page3Response = new OnlineDAResponse { PageNumber = 3, PageSize = 1, TotalPages = 3, TotalCount = 3, DevelopmentApplications = page3Applications };
+
+        _onlineDaClientMock
+            .SetupSequence(c => c.GetDeterminedApplications(It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<OnlineDAResponse>.Success(page1Response))
+            .ThrowsAsync(new HttpRequestException("Timeout on page 2"))
+            .ReturnsAsync(Result<OnlineDAResponse>.Success(page3Response));
+
+        _repositoryMock
+            .Setup(r => r.SaveDevelopmentApplications(It.IsAny<IEnumerable<DomainDevelopmentApplication>>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _service.FetchDaApplications();
+
+        // Assert
+        Assert.That(result, Is.EqualTo(2), "Pages 1 and 3 should be saved despite page 2 failing");
+        _repositoryMock.Verify(
+            r => r.SaveDevelopmentApplications(It.IsAny<IEnumerable<DomainDevelopmentApplication>>()),
+            Times.Exactly(2),
+            "Repository should be called for pages 1 and 3"
+        );
+    }
+
+    [Test]
+    public async Task FetchDaApplications_UsesCouncilsAndLookbackDaysFromSettings()
+    {
+        // Arrange
+        var customSettings = new DevelopmentProposalScrapperSettings
+        {
+            IsEnabled = true,
+            CronSchedule = "* * * * *",
+            Councils = ["Custom Council"],
+            LookbackDays = 14
+        };
+        var service = CreateService(customSettings);
+
+        IReadOnlyList<string>? capturedCouncils = null;
+        DateOnly? capturedStartDate = null;
+
+        _onlineDaClientMock
+            .Setup(c => c.GetDeterminedApplications(It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Callback<IReadOnlyList<string>, DateOnly, int, int>((councils, date, _, _) =>
+            {
+                capturedCouncils = councils;
+                capturedStartDate = date;
+            })
+            .ReturnsAsync(Result<OnlineDAResponse>.Success(new OnlineDAResponse
+            {
+                PageNumber = 1, PageSize = 100, TotalPages = 1, TotalCount = 0,
+                DevelopmentApplications = []
+            }));
+
+        // Act
+        await service.FetchDaApplications();
+
+        // Assert
+        Assert.That(capturedCouncils, Is.EqualTo(new[] { "Custom Council" }));
+        Assert.That(capturedStartDate, Is.EqualTo(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-14))));
+    }
+
+    private DevelopmentProposalScrapperService CreateService(DevelopmentProposalScrapperSettings? settings = null)
+    {
+        var effectiveSettings = settings ?? new DevelopmentProposalScrapperSettings
+        {
+            IsEnabled = true,
+            CronSchedule = "* * * * *",
+            Councils = ["Inner West Council", "City of Sydney Council", "Waverley Council", "Randwick City Council"],
+            LookbackDays = 7
+        };
+
+        var optionsMock = new Mock<IOptions<DevelopmentProposalScrapperSettings>>();
+        optionsMock.Setup(o => o.Value).Returns(effectiveSettings);
+
+        var noOpPipeline = new ResiliencePipelineBuilder().Build();
+
+        return new DevelopmentProposalScrapperService(
+            _loggerMock.Object,
+            _onlineDaClientMock.Object,
+            _repositoryMock.Object,
+            optionsMock.Object,
+            noOpPipeline);
+    }
+
+    private static OnlineDADevelopmentApplication CreateOnlineDAApplication(string appNumber, string council)
     {
         return new OnlineDADevelopmentApplication
         {
@@ -512,33 +585,11 @@ public class DevelopmentProposalScrapperServiceTests
             ApplicationType = ApplicationType.DevelopmentApplication,
             Council = new CouncilInfo { CouncilName = council },
             DeterminationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            DevelopmentType =
-            [
-                new ProposedDevelopmentType { DevelopmentType = "Residential" }
-            ],
-            Location =
-            [
-                new Address { FullAddress = $"Address for {appNumber}" }
-            ],
+            DevelopmentType = [new ProposedDevelopmentType { DevelopmentType = "Residential" }],
+            Location = [new Address { FullAddress = $"Address for {appNumber}" }],
             DateLastUpdated = DateTime.UtcNow,
             LodgementDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-10)),
             CostOfDevelopment = 1000000
         };
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
