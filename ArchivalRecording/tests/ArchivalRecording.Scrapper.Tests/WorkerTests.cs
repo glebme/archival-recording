@@ -38,8 +38,8 @@ public class WorkerTests
 
         var serviceCalledTcs = new TaskCompletionSource();
         _scrapperServiceMock
-            .Setup(s => s.FetchDaApplications(It.IsAny<CancellationToken>()))
-            .Callback(() => serviceCalledTcs.TrySetResult())
+            .Setup(s => s.FetchDaApplications(It.IsAny<ScrapeCycleEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<ScrapeCycleEvent, CancellationToken>((_, _) => serviceCalledTcs.TrySetResult())
             .ReturnsAsync(5);
 
         // Advance fake time so the cron condition is immediately true
@@ -52,7 +52,7 @@ public class WorkerTests
 
         // Assert
         _scrapperServiceMock.Verify(
-            s => s.FetchDaApplications(It.IsAny<CancellationToken>()),
+            s => s.FetchDaApplications(It.IsAny<ScrapeCycleEvent>(), It.IsAny<CancellationToken>()),
             Times.AtLeastOnce,
             "FetchDaApplications should be called when worker is enabled and schedule is due"
         );
@@ -74,22 +74,22 @@ public class WorkerTests
 
         // Assert
         _scrapperServiceMock.Verify(
-            s => s.FetchDaApplications(It.IsAny<CancellationToken>()),
+            s => s.FetchDaApplications(It.IsAny<ScrapeCycleEvent>(), It.IsAny<CancellationToken>()),
             Times.Never,
             "FetchDaApplications should never be called when worker is disabled"
         );
     }
 
     [Test]
-    public async Task Worker_LogsError_WhenServiceThrows()
+    public async Task Worker_EmitsWideCycleEvent_WhenServiceThrows()
     {
         // Arrange
         var worker = CreateWorker(isEnabled: true, cronSchedule: "* * * * *");
 
         var serviceCalledTcs = new TaskCompletionSource();
         _scrapperServiceMock
-            .Setup(s => s.FetchDaApplications(It.IsAny<CancellationToken>()))
-            .Callback(() => serviceCalledTcs.TrySetResult())
+            .Setup(s => s.FetchDaApplications(It.IsAny<ScrapeCycleEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<ScrapeCycleEvent, CancellationToken>((_, _) => serviceCalledTcs.TrySetResult())
             .ThrowsAsync(new Exception("Service failed"));
 
         _fakeTimeProvider.Advance(TimeSpan.FromMinutes(2));
@@ -97,19 +97,19 @@ public class WorkerTests
         // Act
         await worker.StartAsync(CancellationToken.None);
         await serviceCalledTcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await Task.Delay(50); // brief pause for the catch block to execute
+        await Task.Delay(50); // brief pause for the finally block to execute
         await worker.StopAsync(CancellationToken.None);
 
-        // Assert — worker should have caught the exception and logged it
+        // Assert — worker should catch the exception and emit the wide event at Information level
         _loggerMock.Verify(
             x => x.Log(
-                LogLevel.Error,
+                LogLevel.Information,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
+                It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce,
-            "Worker should log an error when the service throws"
+            "Worker should emit a wide cycle event even when the service throws"
         );
     }
 

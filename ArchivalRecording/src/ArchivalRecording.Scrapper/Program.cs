@@ -5,6 +5,8 @@ using DevelopmentProposalScrapper.Domain.Entities;
 using DevelopmentProposalScrapper.Infrastructure;
 using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 using Refit;
+using Serilog;
+using Serilog.Formatting.Compact;
 using Shared;
 using Shared.JsonConverters;
 
@@ -19,6 +21,12 @@ configuration
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);
 builder.Services.Configure<DevelopmentProposalScrapperSettings>(
     configuration.GetSection("WorkerSchedule:DevelopmentProposalScrapper"));
+
+// Serilog — compact JSON to console, forwarded to Seq when configured
+builder.Services.AddSerilog((_, lc) => lc
+    .Enrich.FromLogContext()
+    .WriteTo.Console(new CompactJsonFormatter())
+    .WriteTo.Seq(builder.Configuration["Seq:ServerUrl"] ?? "http://seq:5341"));
 
 //  API Clients
 builder.Services.AddTransient<HttpLoggingHandler>();

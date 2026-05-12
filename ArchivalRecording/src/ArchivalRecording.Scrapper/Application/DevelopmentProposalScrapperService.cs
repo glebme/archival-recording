@@ -9,7 +9,6 @@ using DevelopmentApplication = DevelopmentProposalScrapper.Domain.Entities.Devel
 namespace DevelopmentProposalScrapper.Application;
 
 public class DevelopmentProposalScrapperService(
-    ILogger<IDevelopmentProposalScrapperService> logger,
     IOnlineDAClient onlineDaClient,
     IDevelopmentApplicationRepository developmentApplicationRepository,
     IOptions<DevelopmentProposalScrapperSettings> options,
@@ -17,19 +16,21 @@ public class DevelopmentProposalScrapperService(
 {
     private readonly DevelopmentProposalScrapperSettings _settings = options.Value ?? throw new ArgumentNullException(nameof(options), "DevelopmentProposalScrapperSettings cannot be null.");
 
-    public async Task<int> FetchDaApplications(CancellationToken cancellationToken = default)
+    public async Task<int> FetchDaApplications(ScrapeCycleEvent cycleEvent, CancellationToken cancellationToken = default)
     {
         var savedRecords = 0;
+        var batchNum = 0;
+
         await foreach (var records in GetAllDeterminedApplicationsAfterCertainDate(
                            councils: _settings.Councils,
                            startDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-_settings.LookbackDays)),
-                           pageSize: 100).WithCancellation(cancellationToken))
+                           pageSize: 100,
+                           cycleEvent: cycleEvent).WithCancellation(cancellationToken))
         {
+            batchNum++;
+
             if (!records.Any())
-            {
-                logger.LogInformation("No records fetched from OnlineDA API");
                 continue;
-            }
 
             var developmentApplications = records.Select(da => new DevelopmentApplication
             {
@@ -54,12 +55,12 @@ public class DevelopmentProposalScrapperService(
                     cancellationToken);
 
                 var successfullySaved = developmentApplications.Count;
-                logger.LogInformation("Saved {count} records to database", successfullySaved);
+                cycleEvent.TotalRecordsSaved += successfullySaved;
                 savedRecords += successfullySaved;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to save records to database after retries");
+                cycleEvent.Errors.Add(new PageError(batchNum, "DatabaseSaveFailure", ex.Message));
             }
         }
 
@@ -67,7 +68,7 @@ public class DevelopmentProposalScrapperService(
     }
 
     private async IAsyncEnumerable<IEnumerable<Infrastructure.External.Models.OnlineDA.DevelopmentApplication>> GetAllDeterminedApplicationsAfterCertainDate(
-        IReadOnlyList<string> councils, DateOnly startDate, int pageSize)
+        IReadOnlyList<string> councils, DateOnly startDate, int pageSize, ScrapeCycleEvent cycleEvent)
     {
         int? totalPages = null;
         var currentPage = 1;
@@ -76,6 +77,8 @@ public class DevelopmentProposalScrapperService(
         {
             if (currentPage > totalPages) yield break;
 
+            cycleEvent.PagesAttempted++;
+
             Result<OnlineDAResponse>? result;
             try
             {
@@ -83,8 +86,9 @@ public class DevelopmentProposalScrapperService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to fetch page {Page} from OnlineDA API. Skipping to next page", currentPage);
-                
+                cycleEvent.PagesFailed++;
+                cycleEvent.Errors.Add(new PageError(currentPage, "FetchException", ex.Message));
+
                 currentPage++;
                 if (!totalPages.HasValue) yield break;
                 continue;
@@ -92,23 +96,24 @@ public class DevelopmentProposalScrapperService(
 
             if (!result.IsSuccess)
             {
-                logger.LogError("Failed to fetch page {Page} from OnlineDA API. Error: {ErrorMessage}", currentPage, result.ErrorMessage);
-                
+                cycleEvent.PagesFailed++;
+                cycleEvent.Errors.Add(new PageError(currentPage, "FetchFailure", result.ErrorMessage ?? "Unknown error"));
+
                 currentPage++;
                 if (!totalPages.HasValue) yield break;
                 continue;
             }
 
             if (result.Model is null)
-            {
-                logger.LogWarning("No records returned for page {Page}", currentPage);
                 yield break;
-            }
 
             totalPages ??= result.Model.TotalPages;
             currentPage++;
 
             if (result.Model.DevelopmentApplications is null) yield break;
+
+            cycleEvent.PagesSucceeded++;
+            cycleEvent.TotalRecordsFetched += result.Model.DevelopmentApplications.Count();
 
             yield return result.Model.DevelopmentApplications;
 

@@ -10,5 +10,16 @@ services:
       POSTGRES_PASSWORD: dGuN2836
       POSTGRES_DB: ArchivalRecording
 
+  seq:
+    image: datalust/seq:latest
+    ports:
+      - "5341:5341"
+      - "8080:80"
+    volumes:
+      - seq_data:/data
+    environment:
+      ACCEPT_EULA: "Y"
+
 volumes:
   postgres_data:
+  seq_data:

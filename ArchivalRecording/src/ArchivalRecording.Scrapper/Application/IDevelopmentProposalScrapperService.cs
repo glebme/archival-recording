@@ -2,5 +2,5 @@ namespace DevelopmentProposalScrapper.Application;
 
 public interface IDevelopmentProposalScrapperService
 {
-    public Task<int> FetchDaApplications(CancellationToken cancellationToken = default);
+    Task<int> FetchDaApplications(ScrapeCycleEvent cycleEvent, CancellationToken cancellationToken = default);
 }

@@ -26,8 +26,13 @@ public class DevelopmentProposalScrapperWorker : BackgroundService
 
         _schedule = CrontabSchedule.Parse(_settings.CronSchedule);
         _nextRun = _schedule.GetNextOccurrence(_timeProvider.GetLocalNow().DateTime);
-        _logger.LogInformation("Worker scheduled to run at: {time}", _nextRun);
-        _logger.LogInformation("Starting Development Proposal Scrapper...");
+
+        _logger.LogInformation("WorkerStarted {@WorkerConfig}", new
+        {
+            _settings.CronSchedule,
+            NextRun = _nextRun,
+            _settings.IsEnabled
+        });
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -36,18 +41,30 @@ public class DevelopmentProposalScrapperWorker : BackgroundService
         {
             if (_timeProvider.GetLocalNow().DateTime >= _nextRun && _settings.IsEnabled)
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                var cycleEvent = new ScrapeCycleEvent
+                {
+                    Councils = _settings.Councils,
+                    LookbackFrom = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-_settings.LookbackDays)),
+                    PageSize = 100
+                };
 
                 using var scope = _serviceScopeFactory.CreateScope();
                 var scrapperService = scope.ServiceProvider.GetRequiredService<IDevelopmentProposalScrapperService>();
 
                 try
                 {
-                    await scrapperService.FetchDaApplications(stoppingToken);
+                    await scrapperService.FetchDaApplications(cycleEvent, stoppingToken);
+                    cycleEvent.Outcome = cycleEvent.PagesFailed > 0 ? "partial" : "success";
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Scrapper service encountered an unhandled exception");
+                    cycleEvent.Outcome = "failed";
+                    cycleEvent.Errors.Add(new PageError(0, "UnhandledException", ex.Message));
+                }
+                finally
+                {
+                    cycleEvent.FinishedAt = DateTimeOffset.UtcNow;
+                    _logger.LogInformation("ScrapeCycleCompleted {@ScrapeCycle}", cycleEvent);
                 }
             }
 

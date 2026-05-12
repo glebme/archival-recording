@@ -3,7 +3,6 @@ using DevelopmentProposalScrapper.Domain.Repositories;
 using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
 using DevelopmentProposalScrapper.Domain.Entities;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Polly;
@@ -16,7 +15,6 @@ namespace DevelopmentProposalScrapperTests;
 [TestFixture]
 public class DevelopmentProposalScrapperServiceTests
 {
-    private Mock<ILogger<IDevelopmentProposalScrapperService>> _loggerMock;
     private Mock<IOnlineDAClient> _onlineDaClientMock;
     private Mock<IDevelopmentApplicationRepository> _repositoryMock;
     private DevelopmentProposalScrapperService _service;
@@ -24,7 +22,6 @@ public class DevelopmentProposalScrapperServiceTests
     [SetUp]
     public void Setup()
     {
-        _loggerMock = new Mock<ILogger<IDevelopmentProposalScrapperService>>();
         _onlineDaClientMock = new Mock<IOnlineDAClient>();
         _repositoryMock = new Mock<IDevelopmentApplicationRepository>();
         _service = CreateService();
@@ -89,7 +86,7 @@ public class DevelopmentProposalScrapperServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(5), "Service should return total count of 5 applications");
@@ -146,7 +143,7 @@ public class DevelopmentProposalScrapperServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(3));
@@ -196,7 +193,7 @@ public class DevelopmentProposalScrapperServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(5), "Service should return the total count of saved applications");
@@ -241,7 +238,7 @@ public class DevelopmentProposalScrapperServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(8), "Service should accumulate count as 3 + 2 + 3 = 8 applications");
@@ -276,7 +273,7 @@ public class DevelopmentProposalScrapperServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(2), "Should return count of only successfully saved applications from first page");
@@ -296,7 +293,7 @@ public class DevelopmentProposalScrapperServiceTests
             .ThrowsAsync(new HttpRequestException("Connection failed"));
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(0), "Should return 0 when API throws exception");
@@ -328,7 +325,7 @@ public class DevelopmentProposalScrapperServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(1), "Should return count of only successfully saved applications from second page");
@@ -357,7 +354,7 @@ public class DevelopmentProposalScrapperServiceTests
             .ReturnsAsync(Result<OnlineDAResponse>.Success(response));
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(0), "Should return 0 when no applications are returned");
@@ -386,7 +383,7 @@ public class DevelopmentProposalScrapperServiceTests
             .ReturnsAsync(Result<OnlineDAResponse>.Success(response));
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(0), "Should return 0 when response has null applications");
@@ -450,7 +447,7 @@ public class DevelopmentProposalScrapperServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _service.FetchDaApplications();
+        await _service.FetchDaApplications(new ScrapeCycleEvent());
     }
 
     [Test]
@@ -473,7 +470,7 @@ public class DevelopmentProposalScrapperServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(2), "Both pages should be fetched and saved");
@@ -505,7 +502,7 @@ public class DevelopmentProposalScrapperServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _service.FetchDaApplications();
+        var result = await _service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(result, Is.EqualTo(2), "Pages 1 and 3 should be saved despite page 2 failing");
@@ -546,11 +543,77 @@ public class DevelopmentProposalScrapperServiceTests
             }));
 
         // Act
-        await service.FetchDaApplications();
+        await service.FetchDaApplications(new ScrapeCycleEvent());
 
         // Assert
         Assert.That(capturedCouncils, Is.EqualTo(new[] { "Custom Council" }));
         Assert.That(capturedStartDate, Is.EqualTo(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-14))));
+    }
+
+    [Test]
+    public async Task FetchDaApplications_PopulatesPageStatsOnCycleEvent()
+    {
+        // Arrange
+        var page1Applications = new[] { CreateOnlineDAApplication("APP-001", "Inner West Council") };
+        var page2Applications = new[] { CreateOnlineDAApplication("APP-002", "City of Sydney Council") };
+
+        var page1Response = new OnlineDAResponse { PageNumber = 1, PageSize = 1, TotalPages = 2, TotalCount = 2, DevelopmentApplications = page1Applications };
+        var page2Response = new OnlineDAResponse { PageNumber = 2, PageSize = 1, TotalPages = 2, TotalCount = 2, DevelopmentApplications = page2Applications };
+
+        _onlineDaClientMock
+            .SetupSequence(c => c.GetDeterminedApplications(It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<OnlineDAResponse>.Success(page1Response))
+            .ReturnsAsync(Result<OnlineDAResponse>.Success(page2Response));
+
+        _repositoryMock
+            .Setup(r => r.SaveDevelopmentApplications(It.IsAny<IEnumerable<DomainDevelopmentApplication>>()))
+            .Returns(Task.CompletedTask);
+
+        var cycleEvent = new ScrapeCycleEvent();
+
+        // Act
+        await _service.FetchDaApplications(cycleEvent);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(cycleEvent.PagesAttempted, Is.EqualTo(2));
+            Assert.That(cycleEvent.PagesSucceeded, Is.EqualTo(2));
+            Assert.That(cycleEvent.PagesFailed, Is.EqualTo(0));
+            Assert.That(cycleEvent.TotalRecordsFetched, Is.EqualTo(2));
+            Assert.That(cycleEvent.TotalRecordsSaved, Is.EqualTo(2));
+            Assert.That(cycleEvent.Errors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task FetchDaApplications_RecordsPageErrorOnCycleEvent_WhenPageFails()
+    {
+        // Arrange
+        var page1Applications = new[] { CreateOnlineDAApplication("APP-001", "Inner West Council") };
+        var page1Response = new OnlineDAResponse { PageNumber = 1, PageSize = 1, TotalPages = 2, TotalCount = 2, DevelopmentApplications = page1Applications };
+
+        _onlineDaClientMock
+            .SetupSequence(c => c.GetDeterminedApplications(It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<OnlineDAResponse>.Success(page1Response))
+            .ThrowsAsync(new HttpRequestException("Timeout"));
+
+        _repositoryMock
+            .Setup(r => r.SaveDevelopmentApplications(It.IsAny<IEnumerable<DomainDevelopmentApplication>>()))
+            .Returns(Task.CompletedTask);
+
+        var cycleEvent = new ScrapeCycleEvent();
+
+        // Act
+        await _service.FetchDaApplications(cycleEvent);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(cycleEvent.PagesFailed, Is.EqualTo(1));
+            Assert.That(cycleEvent.Errors, Has.Count.EqualTo(1));
+            Assert.That(cycleEvent.Errors[0].Kind, Is.EqualTo("FetchException"));
+        });
     }
 
     private DevelopmentProposalScrapperService CreateService(DevelopmentProposalScrapperSettings? settings = null)
@@ -569,7 +632,6 @@ public class DevelopmentProposalScrapperServiceTests
         var noOpPipeline = new ResiliencePipelineBuilder().Build();
 
         return new DevelopmentProposalScrapperService(
-            _loggerMock.Object,
             _onlineDaClientMock.Object,
             _repositoryMock.Object,
             optionsMock.Object,
