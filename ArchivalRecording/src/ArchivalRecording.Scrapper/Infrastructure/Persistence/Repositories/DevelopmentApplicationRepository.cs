@@ -13,11 +13,6 @@ public class DevelopmentApplicationRepository : IDevelopmentApplicationRepositor
         _context = context;
     }
 
-    public Task<DevelopmentApplication> GetDevelopmentApplication(string planningPortalApplicationNumber)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task SaveDevelopmentApplication(DevelopmentApplication developmentApplication)
     {
         _context.DevelopmentApplications.Add(developmentApplication);
