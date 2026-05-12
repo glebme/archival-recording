@@ -7,15 +7,16 @@ using DevelopmentApplication = DevelopmentProposalScrapper.Domain.Entities.Devel
 namespace DevelopmentProposalScrapper.Application;
 
 public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScrapperService> logger, IOnlineDAClient onlineDaClient, IDevelopmentApplicationRepository developmentApplicationRepository) : IDevelopmentProposalScrapperService
+    IOptions<DevelopmentProposalScrapperSettings> options,
 {
     public async Task<int> FetchDaApplications()
     {
         // TODO fix unit tests, and run
         var savedRecords = 0;
         await foreach (var records in GetAllDeterminedApplicationsAfterCertainDate(
-                     councils: ["Inner West Council", "City of Sydney Council", "Waverley Council", "Randwick City Council"],
-                     startDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-7)),
-                     pageSize: 100))
+                           councils: _settings.Councils,
+                           startDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-_settings.LookbackDays)),
+                           pageSize: 100).WithCancellation(cancellationToken))
         {
             if (records.Count() == 0)
             {
