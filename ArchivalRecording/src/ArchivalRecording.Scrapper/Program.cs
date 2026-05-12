@@ -40,6 +40,7 @@ builder.Services.AddScoped<IOnlineDAClient, OnlineDAClient>();
 
 // Infrastructure
 builder.Services.AddInfrastructureServices(configuration);
+builder.Services.AddSingleton(TimeProvider.System);
 
 // Services
 builder.Services.AddScoped<IDevelopmentProposalScrapperService, DevelopmentProposalScrapperService>();

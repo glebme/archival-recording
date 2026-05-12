@@ -37,6 +37,6 @@ public class OnlineDAClient(IOnlineDAApi daApi) : IOnlineDAClient
         var response = await daApi.GetOnlineDARecordsAsync(pageSize, pageNumber, filtersRequestString);
 
         return response.IsSuccessful ? Result<OnlineDAResponse>.Success(response.Content!) :
-            Result<OnlineDAResponse>.Failure($"API call failed with status code {response.StatusCode} and message: {response.Error.InnerException}");
+            Result<OnlineDAResponse>.Failure($"API call failed with status code {response.StatusCode} and message: {response.Error?.InnerException?.Message ?? response.Error?.Message}");
     }
 }

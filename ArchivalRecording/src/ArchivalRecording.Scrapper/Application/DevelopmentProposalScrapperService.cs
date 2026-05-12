@@ -1,33 +1,44 @@
 using DevelopmentProposalScrapper.Domain.Repositories;
 using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
 using DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA;
+using Microsoft.Extensions.Options;
+using Polly;
 using Shared;
 using DevelopmentApplication = DevelopmentProposalScrapper.Domain.Entities.DevelopmentApplication;
 
 namespace DevelopmentProposalScrapper.Application;
 
-public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScrapperService> logger, IOnlineDAClient onlineDaClient, IDevelopmentApplicationRepository developmentApplicationRepository) : IDevelopmentProposalScrapperService
+public class DevelopmentProposalScrapperService(
+    ILogger<IDevelopmentProposalScrapperService> logger,
+    IOnlineDAClient onlineDaClient,
+    IDevelopmentApplicationRepository developmentApplicationRepository,
     IOptions<DevelopmentProposalScrapperSettings> options,
+    ResiliencePipeline retryPipeline) : IDevelopmentProposalScrapperService
 {
-    public async Task<int> FetchDaApplications()
+    private readonly DevelopmentProposalScrapperSettings _settings = options.Value ?? throw new ArgumentNullException(nameof(options), "DevelopmentProposalScrapperSettings cannot be null.");
+
+    public async Task<int> FetchDaApplications(CancellationToken cancellationToken = default)
     {
-        // TODO fix unit tests, and run
         var savedRecords = 0;
         await foreach (var records in GetAllDeterminedApplicationsAfterCertainDate(
                            councils: _settings.Councils,
                            startDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-_settings.LookbackDays)),
                            pageSize: 100).WithCancellation(cancellationToken))
         {
-            if (records.Count() == 0)
+            if (!records.Any())
             {
                 logger.LogInformation("No records fetched from OnlineDA API");
                 continue;
             }
-            
+
             var developmentApplications = records.Select(da => new DevelopmentApplication
             {
                 PlanningPortalApplicationNumber = da.PlanningPortalApplicationNumber,
-                DateLastUpdated = da.DateLastUpdated.HasValue ? TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(da.DateLastUpdated.Value, DateTimeKind.Unspecified), TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney")) : null,
+                DateLastUpdated = da.DateLastUpdated.HasValue
+                    ? TimeZoneInfo.ConvertTimeToUtc(
+                        DateTime.SpecifyKind(da.DateLastUpdated.Value, DateTimeKind.Unspecified),
+                        TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney"))
+                    : null,
                 DeterminationDate = da.DeterminationDate,
                 ApplicationStatus = da.ApplicationStatus,
                 ApplicationType = da.ApplicationType,
@@ -38,26 +49,24 @@ public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScra
 
             try
             {
-                // TODO fix council column field naming in migration so that it matches the PropertiesToUpdate
-                await developmentApplicationRepository.SaveDevelopmentApplications(developmentApplications);
+                await retryPipeline.ExecuteAsync(
+                    async _ => await developmentApplicationRepository.SaveDevelopmentApplications(developmentApplications),
+                    cancellationToken);
 
                 var successfullySaved = developmentApplications.Count;
                 logger.LogInformation("Saved {count} records to database", successfullySaved);
-                savedRecords +=  successfullySaved;
+                savedRecords += successfullySaved;
             }
             catch (Exception ex)
             {
-                // TODO retry mechanism?
-                logger.LogError(ex, "Failed to save records to database");
+                logger.LogError(ex, "Failed to save records to database after retries");
             }
         }
 
         return savedRecords;
     }
-    
-    
-    // TODO think about progressing if one page fails - currently it will stop the entire process, but maybe we want to continue with the next page?
-    private async IAsyncEnumerable<IEnumerable<DevelopmentProposalScrapper.Infrastructure.External.Models.OnlineDA.DevelopmentApplication>> GetAllDeterminedApplicationsAfterCertainDate(
+
+    private async IAsyncEnumerable<IEnumerable<Infrastructure.External.Models.OnlineDA.DevelopmentApplication>> GetAllDeterminedApplicationsAfterCertainDate(
         IReadOnlyList<string> councils, DateOnly startDate, int pageSize)
     {
         int? totalPages = null;
@@ -66,41 +75,43 @@ public class DevelopmentProposalScrapperService(ILogger<IDevelopmentProposalScra
         do
         {
             if (currentPage > totalPages) yield break;
-            
+
             Result<OnlineDAResponse>? result;
             try
             {
-                 result =
-                    await onlineDaClient.GetDeterminedApplications(councils, startDate, pageSize, currentPage);
-
+                result = await onlineDaClient.GetDeterminedApplications(councils, startDate, pageSize, currentPage);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to fetch records from OnlineDA API due to exception");
-            
-                yield break; 
+                logger.LogError(ex, "Failed to fetch page {Page} from OnlineDA API. Skipping to next page", currentPage);
+                
+                currentPage++;
+                if (!totalPages.HasValue) yield break;
+                continue;
             }
 
             if (!result.IsSuccess)
             {
-                logger.LogError("Failed to fetch records from OnlineDA API. Error: {ErrorMessage}", result.ErrorMessage);
+                logger.LogError("Failed to fetch page {Page} from OnlineDA API. Error: {ErrorMessage}", currentPage, result.ErrorMessage);
                 
-                yield break;
-            } 
-            
+                currentPage++;
+                if (!totalPages.HasValue) yield break;
+                continue;
+            }
+
             if (result.Model is null)
             {
-                logger.LogWarning("No records to fetch");
-                
+                logger.LogWarning("No records returned for page {Page}", currentPage);
                 yield break;
             }
-            
+
             totalPages ??= result.Model.TotalPages;
             currentPage++;
 
             if (result.Model.DevelopmentApplications is null) yield break;
-            
+
             yield return result.Model.DevelopmentApplications;
-        } while (currentPage < totalPages);
+
+        } while (currentPage <= totalPages);
     }
 }
