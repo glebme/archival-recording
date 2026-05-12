@@ -1,0 +1,23 @@
+# Build output
+bin/
+obj/
+out/
+publish/
+
+# Test results
+TestResults/
+
+# User-specific files
+*.user
+*.suo
+.vs/
+.idea/
+*.DS_Store
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# dotnet secrets (stored in user profile, not repo)
+# UserSecretsId is fine to commit; the secrets themselves are not

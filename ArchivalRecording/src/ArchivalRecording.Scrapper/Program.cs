@@ -4,6 +4,7 @@ using DevelopmentProposalScrapper.Application;
 using DevelopmentProposalScrapper.Domain.Entities;
 using DevelopmentProposalScrapper.Infrastructure;
 using DevelopmentProposalScrapper.Infrastructure.External.Clients.OnlineDA;
+using Microsoft.EntityFrameworkCore;
 using Refit;
 using Shared;
 using Shared.JsonConverters;
@@ -47,4 +48,10 @@ builder.Services.AddScoped<IDevelopmentProposalScrapperService, DevelopmentPropo
 
 var host = builder.Build();
 
-host.Run();
+using (var scope = host.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync();
+}
+
+await host.RunAsync();
