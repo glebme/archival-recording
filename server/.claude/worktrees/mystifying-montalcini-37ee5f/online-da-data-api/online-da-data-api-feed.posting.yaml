@@ -1,0 +1,13 @@
+name: Online DA Data API Feed
+description: The Online DA service API provides a data feed of all DA applications
+  lodged on the NSW Planning Portal since January of 2019.
+url: https://api.apps1.nsw.gov.au/eplanning/data/v0/OnlineDA
+headers:
+- name: PageSize
+  value: '5'
+- name: PageNumber
+  value: '14'
+- name: Filters
+  value: '{"filters": {"CouncilName": ["Council of the City of Sydney"], "ApplicationType":
+    "Development Application", "ApplicationStatus": ["Determined"], "DeterminationDateFrom":
+    "2025-08-01"}}'
