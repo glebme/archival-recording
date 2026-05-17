@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-DevelopmentProposalScrapper-668cc31f-e5c6-4637-9b8d-7495d51e8132</UserSecretsId>
+        <RootNamespace>DevelopmentProposalScrapper</RootNamespace>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="EFCore.BulkExtensions" Version="9.0.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.15" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.15">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.8" />
+        <PackageReference Include="NCrontab" Version="3.3.3" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+        <PackageReference Include="Polly" Version="8.4.1" />
+        <PackageReference Include="Refit" Version="8.0.0" />
+        <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Infrastructure\External\Models\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ArchivalRecording.Shared\ArchivalRecording.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

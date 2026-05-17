@@ -37,9 +37,6 @@ ScaffoldingReadMe.txt
 .DS_Store
 Thumbs.db
 
-# WSL / Linux subsystem meta files
-*.Identifier
-
 # Rider
 .idea/
 
