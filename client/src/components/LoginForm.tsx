@@ -1,21 +1,28 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
-import {Button} from "@/components/ui/button.tsx";
-import {type CodeResponse, useGoogleLogin} from "@react-oauth/google";
+import {Button} from "@/components/ui/button"
+import {useGoogleLogin} from "@react-oauth/google";
 import {useState} from "react";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
+import {useAuthContext, type UserInfo as ContextUserInfo} from "../contexts/AuthContext.tsx";
 
 const LoginForm = () => {
     const navigate = useNavigate();
+    const {setUser} = useAuthContext();
     const [hasLoginFailed, setHasLoginFailed] = useState<boolean>(false);
 
     const login = useGoogleLogin({
-        onSuccess: async (codeResponse: CodeResponse) => {
-            await axios.post("/api/auth/google", {code: codeResponse.code})
-            navigate("/dashboard");
+        onSuccess: async ({access_token}) => {
+            try {
+                const response = await axios.post<ContextUserInfo>("/auth/google", {accessToken: access_token});
+                setUser(response.data);
+                navigate("/dashboard");
+            } catch (error) {
+                console.error(error);
+                setHasLoginFailed(true);
+            }
         },
         onError: () => setHasLoginFailed(true),
-        flow: 'auth-code'
     });
 
     return (
